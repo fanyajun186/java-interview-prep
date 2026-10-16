@@ -1,11 +1,14 @@
 # Redis · 笔记索引
 
 > 2026-10-13 首批成稿，对应四问：基础类型与底层结构 / 持久化 / 主从哨兵集群 / 单线程模型。
-> 2026-10-16 增补 redis-07（Cluster 深挖）、redis-08（并发与原子性），并回填 redis-01 的 Set 详解与选型对照表。新增 6 张结构图，放在 `images/`（源文件在 `images/svg-src/`，用 `node svg2png.js` 重新生成）。
+> 2026-10-16 增补 redis-07（Cluster 深挖）、redis-08（并发与原子性），并回填 redis-01 的 Set 详解与选型对照表。新增 6 张结构图，放在 `images/`。
 
-> **配图已内嵌**：本目录下 13 张图全部以 **base64 PNG** 内嵌进对应 md，**每张图只占一行**，不打断正文阅读，单文件自包含。选 PNG 而非 SVG 是因为不少 Markdown 阅读器会过滤 SVG（内联源码、data URI 都不显示），PNG 兼容性最好。`images/` 下的 PNG 与 `svg-src/` 下的 SVG 源文件仍保留。
-> 改图流程：改 `images/svg-src/*.svg` → `cd images && node svg2png.js` → `node scripts/embed_images.js`。
-> 其他形态：`--vector` 切回 base64 矢量 SVG（体积减半、放大不模糊，但部分阅读器不显示）、`--restore` 还原成外链、`--svg-src` 切成可读 SVG 源码。
+> **配图已内嵌 · 形态：行内 base64 PNG**：本目录 13 张图全部内嵌进对应 md，单文件自包含。正文里的图片就是标准行内写法 `![说明](data:image/png;base64,…)`，一张图一行，单张编码控制在 48KB 以内。
+> 两条硬约束（都是踩过坑换来的，别改回去）：① **必须用 PNG** —— 不少阅读器出于 XSS 考虑过滤 SVG，内联源码和 data URI 都不显示；② **单张 base64 必须压到 48KB 以内** —— Typora 对超长 base64 有硬门槛（官方 issue #6057），超了会直接退化成显示一长串编码，图反而看不见。另外**不要改成引用式**（正文留短标签、编码放文件末尾）：Typora 能显示，但 WorkBuddy 的 md 预览解析不了那个悬空引用，图会变成一段标签文字。
+> 脚本按上述约束自动选档：900px 起往下试宽度 + 16 色调色板（16 色 = PNG 的 4bpp，加到 32 色会掉进 8bpp 体积翻倍，肉眼还没区别）。
+> 切形态：`node scripts/embed_images.js`（默认行内）｜`--ref`（引用式，仅 Typora 可用）｜`--vector`（base64 矢量 SVG）｜`--svg-src`（可读源码）｜`--restore`（还原成外链）。
+> Typora 里若嫌光标落到图片行时那行编码横向拖得很宽，在主题 CSS 末尾加：`span.md-image-src-span.ty-focusable{max-width:calc(100% - 20px);display:inline-block;overflow:hidden !important;white-space:nowrap !important;}`
+> ⚠️ 本目录的 SVG 源文件已不在磁盘上，只剩 `images/` 下的 1800px PNG 原图；要改图只能重画。
 
 ## 文件清单
 

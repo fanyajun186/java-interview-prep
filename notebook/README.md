@@ -11,7 +11,7 @@
 
 ## 总览
 
-- **11** 个主题目录，**83** 份讲义，累计约 **21,692** 行
+- **11** 个主题目录，**83** 份讲义，累计约 **21,673** 行
 - 每个主题目录内可含一份 `README.md` 作为该主题的索引与高频题速查表
 
 ## 目录约定
@@ -93,17 +93,17 @@
 
 | 文件 | 标题 | 行数 |
 | --- | --- | --- |
-| [`mysql-architecture.md`](mysql/mysql-architecture.md) | MySQL 主题一：InnoDB 从 Server 层到引擎层的架构 | 206 |
-| [`mysql-btree-and-sharding.md`](mysql/mysql-btree-and-sharding.md) | MySQL 主题 2：为什么选 B+ 树、三层容量手算与 2000 万分表阈值 | 171 |
-| [`mysql-core-ten-topics.md`](mysql/mysql-core-ten-topics.md) | MySQL 核心十大主题 · 总纲索引（InnoDB） | 43 |
-| [`mysql-index-optimization.md`](mysql/mysql-index-optimization.md) | MySQL 索引失效与慢 SQL 分析优化（合并讲义） | 229 |
+| [`mysql-architecture.md`](mysql/mysql-architecture.md) | MySQL 主题一：InnoDB 从 Server 层到引擎层的架构 | 204 |
+| [`mysql-btree-and-sharding.md`](mysql/mysql-btree-and-sharding.md) | MySQL 主题 2：为什么选 B+ 树、三层容量手算与 2000 万分表阈值 | 169 |
+| [`mysql-core-ten-topics.md`](mysql/mysql-core-ten-topics.md) | MySQL 核心十大主题 · 总纲索引（InnoDB） | 47 |
+| [`mysql-index-optimization.md`](mysql/mysql-index-optimization.md) | MySQL 索引失效与慢 SQL 分析优化（合并讲义） | 227 |
 | [`mysql-join-small-table-drives-big.md`](mysql/mysql-join-small-table-drives-big.md) | MySQL InnoDB 连表查询：为什么「小表驱动大表」 | 287 |
 | [`mysql-lock-with-without-transactional.md`](mysql/mysql-lock-with-without-transactional.md) | InnoDB + RR：加与不加 @Transactional 时的加锁行为全解 | 320 |
-| [`mysql-locks-deadlock.md`](mysql/mysql-locks-deadlock.md) | MySQL 锁体系与死锁：一条线讲透 | 273 |
-| [`mysql-logs.md`](mysql/mysql-logs.md) | MySQL 三大日志：undo log / redo log / binlog | 214 |
-| [`mysql-transaction-mvcc.md`](mysql/mysql-transaction-mvcc.md) | MySQL 事务隔离、MVCC 与当前读：一条线讲透 | 218 |
+| [`mysql-locks-deadlock.md`](mysql/mysql-locks-deadlock.md) | MySQL 锁体系与死锁：一条线讲透 | 271 |
+| [`mysql-logs.md`](mysql/mysql-logs.md) | MySQL 三大日志：undo log / redo log / binlog | 212 |
+| [`mysql-transaction-mvcc.md`](mysql/mysql-transaction-mvcc.md) | MySQL 事务隔离、MVCC 与当前读：一条线讲透 | 216 |
 
-配图 / 附件：`mysql/images/mysql-arch-layers.png`、`mysql/images/mysql-arch-page.png`、`mysql/images/mysql-btree-capacity.png`、`mysql/images/mysql-btree-structure.png`、`mysql/images/mysql-index-explain.png`、`mysql/images/mysql-index-leftmost.png`、`mysql/images/mysql-locks-deadlock.png`、`mysql/images/mysql-locks-nextkey.png`、`mysql/images/mysql-logs-compare.png`、`mysql/images/mysql-logs-update-flow.png`、`mysql/images/mysql-mvcc-readview.png`、`mysql/images/mysql-mvcc-version-chain.png`、`mysql/images/svg-src/mysql-arch-layers.svg`、`mysql/images/svg-src/mysql-arch-page.svg`、`mysql/images/svg-src/mysql-btree-capacity.svg`、`mysql/images/svg-src/mysql-btree-structure.svg`、`mysql/images/svg-src/mysql-index-explain.svg`、`mysql/images/svg-src/mysql-index-leftmost.svg`、`mysql/images/svg-src/mysql-locks-deadlock.svg`、`mysql/images/svg-src/mysql-locks-nextkey.svg`、`mysql/images/svg-src/mysql-logs-compare.svg`、`mysql/images/svg-src/mysql-logs-update-flow.svg`、`mysql/images/svg-src/mysql-mvcc-readview.svg`、`mysql/images/svg-src/mysql-mvcc-version-chain.svg`、`mysql/images/svg2png.js`
+配图 / 附件：`mysql/images/mysql-arch-layers.png`、`mysql/images/mysql-arch-page.png`、`mysql/images/mysql-btree-capacity.png`、`mysql/images/mysql-btree-structure.png`、`mysql/images/mysql-index-explain.png`、`mysql/images/mysql-index-leftmost.png`、`mysql/images/mysql-locks-deadlock.png`、`mysql/images/mysql-locks-nextkey.png`、`mysql/images/mysql-logs-compare.png`、`mysql/images/mysql-logs-update-flow.png`、`mysql/images/mysql-mvcc-readview.png`、`mysql/images/mysql-mvcc-version-chain.png`
 
 
 ### mq
@@ -134,17 +134,17 @@
 
 | 文件 | 标题 | 行数 |
 | --- | --- | --- |
-| [`README.md`](redis/README.md) | Redis · 笔记索引 | 71 |
+| [`README.md`](redis/README.md) | Redis · 笔记索引 | 74 |
 | [`redis-01-data-types.md`](redis/redis-01-data-types.md) | Redis 基础类型：使用场景与底层数据结构 | 216 |
 | [`redis-02-persistence.md`](redis/redis-02-persistence.md) | Redis 持久化：RDB 与 AOF | 534 |
 | [`redis-03-replication-sentinel-cluster.md`](redis/redis-03-replication-sentinel-cluster.md) | Redis 主从复制、哨兵与集群：通信与选举 | 181 |
 | [`redis-04-single-thread-model.md`](redis/redis-04-single-thread-model.md) | Redis 单线程模型与 6.0 多线程 IO | 115 |
-| [`redis-05-internal-encoding.md`](redis/redis-05-internal-encoding.md) | Redis 底层数据结构深度：SDS / listpack / quicklist / dict / intset / skiplist | 185 |
+| [`redis-05-internal-encoding.md`](redis/redis-05-internal-encoding.md) | Redis 底层数据结构深度：SDS / listpack / quicklist / dict / intset / skiplist | 178 |
 | [`redis-06-eviction-policies.md`](redis/redis-06-eviction-policies.md) | Redis 内存淘汰策略：LRU / LFU 与 8 种 maxmemory-policy | 456 |
-| [`redis-07-cluster-deep-dive.md`](redis/redis-07-cluster-deep-dive.md) | Redis Cluster 深入：槽路由、在线迁移、故障转移、Gossip、脑裂 | 361 |
-| [`redis-08-concurrency-atomicity.md`](redis/redis-08-concurrency-atomicity.md) | Redis 并发安全：单线程下多条命令的原子性怎么保证 | 205 |
+| [`redis-07-cluster-deep-dive.md`](redis/redis-07-cluster-deep-dive.md) | Redis Cluster 深入：槽路由、在线迁移、故障转移、Gossip、脑裂 | 356 |
+| [`redis-08-concurrency-atomicity.md`](redis/redis-08-concurrency-atomicity.md) | Redis 并发安全：单线程下多条命令的原子性怎么保证 | 204 |
 
-配图 / 附件：`redis/images/redis-cluster-01-slot-routing.png`、`redis/images/redis-cluster-02-moved-ask.png`、`redis/images/redis-cluster-03-failover.png`、`redis/images/redis-cluster-04-gossip.png`、`redis/images/redis-cluster-05-split-brain.png`、`redis/images/redis-concurrency-01-atomicity.png`、`redis/images/redis-ds-01-overview.png`、`redis/images/redis-ds-02-sds.png`、`redis/images/redis-ds-03-listpack-vs-ziplist.png`、`redis/images/redis-ds-04-quicklist.png`、`redis/images/redis-ds-05-dict-rehash.png`、`redis/images/redis-ds-06-intset.png`、`redis/images/redis-ds-07-zset-skiplist.png`、`redis/images/svg-src/redis-cluster-01-slot-routing.svg`、`redis/images/svg-src/redis-cluster-02-moved-ask.svg`、`redis/images/svg-src/redis-cluster-03-failover.svg`、`redis/images/svg-src/redis-cluster-04-gossip.svg`、`redis/images/svg-src/redis-cluster-05-split-brain.svg`、`redis/images/svg-src/redis-concurrency-01-atomicity.svg`、`redis/images/svg-src/redis-ds-01-overview.svg`、`redis/images/svg-src/redis-ds-02-sds.svg`、`redis/images/svg-src/redis-ds-03-listpack-vs-ziplist.svg`、`redis/images/svg-src/redis-ds-04-quicklist.svg`、`redis/images/svg-src/redis-ds-05-dict-rehash.svg`、`redis/images/svg-src/redis-ds-06-intset.svg`、`redis/images/svg-src/redis-ds-07-zset-skiplist.svg`、`redis/images/svg2png.js`
+配图 / 附件：`redis/images/redis-cluster-01-slot-routing.png`、`redis/images/redis-cluster-02-moved-ask.png`、`redis/images/redis-cluster-03-failover.png`、`redis/images/redis-cluster-04-gossip.png`、`redis/images/redis-cluster-05-split-brain.png`、`redis/images/redis-concurrency-01-atomicity.png`、`redis/images/redis-ds-01-overview.png`、`redis/images/redis-ds-02-sds.png`、`redis/images/redis-ds-03-listpack-vs-ziplist.png`、`redis/images/redis-ds-04-quicklist.png`、`redis/images/redis-ds-05-dict-rehash.png`、`redis/images/redis-ds-06-intset.png`、`redis/images/redis-ds-07-zset-skiplist.png`
 
 
 ### ai
@@ -160,7 +160,7 @@
 | [`ai-06-project-experience.md`](ai/ai-06-project-experience.md) | 项目经验：RAG 知识库 STAR 故事与 autocava-ai 提炼 | 81 |
 | [`ai-07-agent-paradigms.md`](ai/ai-07-agent-paradigms.md) | Agent 范式：定义、组件、推理模式与 Workflow 的边界 | 282 |
 | [`ai-08-rag-and-vector-db.md`](ai/ai-08-rag-and-vector-db.md) | RAG 工作流程进阶与向量数据库 | 155 |
-| [`ai-project-interview.md`](ai/ai-project-interview.md) | ChatController\#chatMessagesStream 提问全链路梳理 | 96 |
+| [`ai-project-interview.md`](ai/ai-project-interview.md) | ChatController\#chatMessagesStream 提问全链路梳理 | 95 |
 
 配图 / 附件：`ai/images/ai-chat-full-flow.png`、`ai/images/svg-src/ai-chat-full-flow.svg`、`ai/images/svg2png.js`
 

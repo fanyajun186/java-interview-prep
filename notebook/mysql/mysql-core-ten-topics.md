@@ -3,7 +3,11 @@
 > 面向中大厂高级工程师面试（对标阿里 P6-P7 / 腾讯 T9-T10）。版本前提：MySQL 5.7 / 8.0；InnoDB。
 > 本文只作总纲与学习路线，详细内容已拆分为 6 份子讲义（每份含配图、面试问法、追问链、误区，全部自带答案）。
 
-> **配图已内嵌**：子讲义里的 12 张图全部以 **base64 PNG** 内嵌进对应 md，**每张图只占一行**，不打断正文阅读，单文件自包含。选 PNG 而非 SVG 是因为不少 Markdown 阅读器会过滤 SVG（内联源码、data URI 都不显示），PNG 兼容性最好。`images/` 下的 PNG 与 `images/svg-src/` 下的源仍保留；改图流程：改 `svg-src/*.svg` → `cd images && node svg2png.js` → `node scripts/embed_images.js`（`--vector` 切矢量 SVG、`--restore` 还原外链、`--svg-src` 切成可读源码）。
+> **配图已内嵌 · 形态：行内 base64 PNG**：子讲义里的 12 张图全部内嵌进对应 md，单文件自包含。正文里的图片就是标准行内写法 `![说明](data:image/png;base64,…)`，一张图一行，单张编码控制在 48KB 以内。
+> 三条硬约束（都是踩过坑换来的，别改回去）：① **必须用 PNG** —— 不少阅读器出于 XSS 考虑过滤 SVG，内联源码和 data URI 都不显示；② **单张 base64 必须压到 48KB 以内** —— Typora 对超长 base64 有硬门槛（官方 issue #6057），超了会直接退化成显示一长串编码，图反而看不见；③ **不要改成引用式**（正文留短标签、编码放文件末尾）—— Typora 能显示，但 WorkBuddy 的 md 预览解析不了悬空引用，图会变成一段标签文字。
+> 脚本按上述约束自动选档：900px 起往下试宽度 + 16 色调色板（16 色 = PNG 的 4bpp，加到 32 色会掉进 8bpp 体积翻倍，肉眼还没区别）。
+> 切形态：`node scripts/embed_images.js`（默认行内）｜`--ref`（引用式，仅 Typora 可用）｜`--vector`｜`--svg-src`｜`--restore`。
+> ⚠️ `images/` 下的 12 张 PNG 是 1800px 原图；对应的 SVG 源文件已不在磁盘上，要改图只能重画。
 
 ## 拆分方案与对应关系
 

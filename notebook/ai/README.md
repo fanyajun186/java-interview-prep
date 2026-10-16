@@ -3,6 +3,10 @@
 > 来源：豆包会话《Java AI 应用后端面试准备》（2026-10-13）导出 md，已按主题分类归纳。
 > 分类整理时对原笔记中的错误知识点做了修正（正文已改），文末附勘误清单。
 
+> **配图已内嵌 · 形态：行内 base64 PNG**：`ai-project-interview.md` 里的 1 张全链路流程图已内嵌成本文件内的 `![说明](data:image/png;base64,…)`，单文件自包含。两条硬约束（踩过坑换来的，别改回去）：① **必须用 PNG** —— 不少阅读器出于 XSS 考虑过滤 SVG，内联源码和 data URI 都不显示；② **单张 base64 必须压到 48KB 以内** —— Typora 对超长 base64 有硬门槛（官方 issue #6057），超了会退化成显示一长串编码。另外**不要改成引用式**（正文留短标签、编码放文件末尾）：Typora 能显示，但 WorkBuddy 的 md 预览解析不了那个悬空引用，图会变成一段标签文字。
+> 本目录的流程图/时序图统一用 Mermaid（Typora 与 WorkBuddy 都原生支持），只有字节级布局图才出 PNG。
+> ✅ `notebook/ai/images/` 下的 PNG **可以删除**，正文已不引用它们。唯一还剩下的矢量源 `ai-chat-full-flow.svg` 已备份到 `java-interview-prep/assets/svg-src/`，要改这张图从那里取。
+
 ## 文件清单
 
 | 文件 | 内容 | 原会话轮次 |
