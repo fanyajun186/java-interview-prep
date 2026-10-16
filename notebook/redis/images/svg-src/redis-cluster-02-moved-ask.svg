@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560" font-family="Microsoft YaHei, PingFang SC, sans-serif">
+  <rect width="900" height="560" fill="#ffffff"/>
+  <text x="450" y="34" text-anchor="middle" font-size="20" font-weight="bold" fill="#24292f">在线槽迁移：MOVED 与 ASK 的分工（迁移期间不停写）</text>
+
+  <defs>
+    <marker id="cB" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1a73e8"/></marker>
+    <marker id="cR" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#d93025"/></marker>
+    <marker id="cG" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#188038"/></marker>
+    <marker id="cO" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#b06000"/></marker>
+  </defs>
+
+  <!-- 迁移状态 -->
+  <text x="60" y="72" font-size="14" font-weight="bold" fill="#24292f">① 迁移前的状态标记（两条命令，顺序是先目标后源）</text>
+
+  <rect x="60" y="84" width="360" height="58" rx="8" fill="#fef7e0" stroke="#b06000"/>
+  <text x="240" y="106" text-anchor="middle" font-size="13" font-weight="bold" fill="#b06000">源节点 Source</text>
+  <text x="240" y="128" text-anchor="middle" font-size="12" fill="#24292f">CLUSTER SETSLOT &lt;slot&gt; MIGRATING &lt;target&gt;</text>
+
+  <rect x="480" y="84" width="360" height="58" rx="8" fill="#e6f4ea" stroke="#188038"/>
+  <text x="660" y="106" text-anchor="middle" font-size="13" font-weight="bold" fill="#188038">目标节点 Target</text>
+  <text x="660" y="128" text-anchor="middle" font-size="12" fill="#24292f">CLUSTER SETSLOT &lt;slot&gt; IMPORTING &lt;source&gt;</text>
+
+  <line x1="424" y1="113" x2="476" y2="113" stroke="#b06000" stroke-width="2" marker-end="url(#cO)"/>
+  <text x="450" y="105" text-anchor="middle" font-size="11" fill="#b06000">MIGRATE 逐 key 搬迁</text>
+
+  <!-- 三种请求分支 -->
+  <text x="60" y="176" font-size="14" font-weight="bold" fill="#24292f">② 迁移进行中，同一个槽里的 key 分成两拨，请求怎么走</text>
+
+  <rect x="60" y="192" width="250" height="46" rx="6" fill="#ffffff" stroke="#57606a"/>
+  <text x="185" y="220" text-anchor="middle" font-size="13" fill="#24292f">客户端请求 slot 内某个 key</text>
+  <text x="185" y="232" font-size="1" fill="#ffffff"> </text>
+
+  <!-- 分支1 -->
+  <line x1="185" y1="240" x2="185" y2="264" stroke="#57606a"/>
+  <line x1="185" y1="264" x2="120" y2="264" stroke="#188038" marker-end="url(#cG)"/>
+  <rect x="60" y="272" width="250" height="60" rx="8" fill="#e6f4ea" stroke="#188038"/>
+  <text x="185" y="296" text-anchor="middle" font-size="13" font-weight="bold" fill="#188038">分支 A：key 还在源节点</text>
+  <text x="185" y="318" text-anchor="middle" font-size="12" fill="#188038">源节点正常读写，客户端无感</text>
+
+  <!-- 分支2 -->
+  <line x1="185" y1="264" x2="450" y2="264" stroke="#b06000" marker-end="url(#cO)"/>
+  <rect x="330" y="272" width="250" height="60" rx="8" fill="#fff4e5" stroke="#b06000"/>
+  <text x="455" y="296" text-anchor="middle" font-size="13" font-weight="bold" fill="#b06000">分支 B：key 已搬到目标</text>
+  <text x="455" y="318" text-anchor="middle" font-size="12" fill="#b06000">源回 -ASK slot 目标ip:port</text>
+
+  <!-- 分支3 -->
+  <line x1="185" y1="264" x2="780" y2="264" stroke="#d93025" marker-end="url(#cR)"/>
+  <rect x="660" y="272" width="230" height="60" rx="8" fill="#fce8e6" stroke="#d93025"/>
+  <text x="775" y="296" text-anchor="middle" font-size="13" font-weight="bold" fill="#d93025">分支 C：槽已全部迁完</text>
+  <text x="775" y="318" text-anchor="middle" font-size="12" fill="#d93025">源回 -MOVED，永久重定向</text>
+
+  <!-- ASK 细节 -->
+  <rect x="330" y="348" width="250" height="96" rx="8" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="346" y="370" font-size="12" font-weight="bold" fill="#24292f">ASK 的完整动作：</text>
+  <text x="346" y="392" font-size="12" fill="#24292f">1. 客户端临时连目标节点</text>
+  <text x="346" y="410" font-size="12" fill="#24292f">2. 先发 ASKING 打开一次性开关</text>
+  <text x="346" y="428" font-size="12" fill="#24292f">3. 再发真正的命令，then 结束</text>
+
+  <rect x="60" y="348" width="250" height="96" rx="8" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="76" y="370" font-size="12" font-weight="bold" fill="#24292f">为什么非要先 ASKING：</text>
+  <text x="76" y="392" font-size="12" fill="#24292f">目标节点此时不算持有该槽，</text>
+  <text x="76" y="410" font-size="12" fill="#24292f">不带 ASKING 直接访问会被拒绝，</text>
+  <text x="76" y="428" font-size="12" fill="#24292f">回一个 MOVED 把请求打回源节点</text>
+
+  <rect x="660" y="348" width="230" height="96" rx="8" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="676" y="370" font-size="12" font-weight="bold" fill="#24292f">收尾命令：</text>
+  <text x="676" y="392" font-size="12" fill="#24292f">CLUSTER SETSLOT &lt;slot&gt;</text>
+  <text x="676" y="410" font-size="12" fill="#24292f">NODE &lt;target-id&gt;</text>
+  <text x="676" y="428" font-size="12" fill="#24292f">槽所有权正式易主</text>
+
+  <!-- 底部结论 -->
+  <rect x="60" y="464" width="830" height="72" rx="8" fill="#f6f8fa" stroke="#d0d7de"/>
+  <text x="76" y="488" font-size="13" font-weight="bold" fill="#24292f">一句话区分（必背）</text>
+  <text x="76" y="510" font-size="12" fill="#d93025">MOVED = 槽的归属已经变了（永久），客户端必须更新本地映射；不发 MOVED 说明旧节点还认这个槽</text>
+  <text x="76" y="528" font-size="12" fill="#b06000">ASK = 槽的归属没变、只是部分 key 临时搬到别处（一次性），客户端不该改映射，下次还得先问源节点</text>
+</svg>

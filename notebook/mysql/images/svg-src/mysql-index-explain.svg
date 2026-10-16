@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 640" font-family="Microsoft YaHei, PingFang SC, sans-serif">
+  <defs>
+    <marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1a73e8"/>
+    </marker>
+  </defs>
+  <rect width="900" height="640" fill="#ffffff"/>
+  <text x="450" y="36" text-anchor="middle" font-size="22" font-weight="bold" fill="#24292f">EXPLAIN 结果判读：一列一病症，一处一药方</text>
+
+  <!-- EXPLAIN 输出表格 -->
+  <g font-size="12">
+    <rect x="40" y="58" width="820" height="30" fill="#f6f8fa" stroke="#d0d7de"/>
+    <g fill="#57606a" font-weight="bold" text-anchor="middle">
+      <text x="72" y="77">id</text>
+      <text x="148" y="77">type</text>
+      <text x="262" y="77">possible_keys</text>
+      <text x="392" y="77">key</text>
+      <text x="486" y="77">key_len</text>
+      <text x="566" y="77">rows</text>
+      <text x="648" y="77">filtered</text>
+      <text x="776" y="77">Extra</text>
+    </g>
+    <rect x="40" y="88" width="820" height="34" fill="#ffffff" stroke="#d0d7de"/>
+    <g fill="#24292f" text-anchor="middle" font-family="Consolas, monospace">
+      <text x="72" y="109">1</text>
+      <text x="148" y="109" fill="#d93025" font-weight="bold">ALL</text>
+      <text x="262" y="109">idx_a_b</text>
+      <text x="392" y="109" fill="#d93025">NULL</text>
+      <text x="486" y="109">NULL</text>
+      <text x="566" y="109" fill="#d93025" font-weight="bold">980000</text>
+      <text x="648" y="109">10.0</text>
+      <text x="776" y="109" fill="#b06000" font-weight="bold">Using filesort</text>
+    </g>
+  </g>
+
+  <!-- 列判读标注（右侧引线） -->
+  <g font-size="12.5" fill="#24292f">
+    <line x1="148" y1="122" x2="148" y2="142" stroke="#1a73e8" marker-end="url(#arr2)"/>
+    <rect x="40" y="146" width="220" height="46" rx="6" fill="#e8f0fe" stroke="#1a73e8"/>
+    <text x="50" y="164" font-weight="bold" fill="#1a73e8">type：至少到 range</text>
+    <text x="50" y="182" fill="#57606a">system&gt;const&gt;eq_ref&gt;ref&gt;range&gt;index&gt;ALL</text>
+
+    <line x1="392" y1="122" x2="330" y2="142" stroke="#1a73e8" marker-end="url(#arr2)"/>
+    <rect x="272" y="146" width="230" height="46" rx="6" fill="#e8f0fe" stroke="#1a73e8"/>
+    <text x="282" y="164" font-weight="bold" fill="#1a73e8">key=NULL = 优化器放弃</text>
+    <text x="282" y="182" fill="#57606a">有 possible_keys 却不用 → 成本误判</text>
+
+    <line x1="486" y1="122" x2="560" y2="142" stroke="#1a73e8" marker-end="url(#arr2)"/>
+    <rect x="514" y="146" width="200" height="46" rx="6" fill="#e8f0fe" stroke="#1a73e8"/>
+    <text x="524" y="164" font-weight="bold" fill="#1a73e8">key_len 反推用几列</text>
+    <text x="524" y="182" fill="#57606a">int=4，varchar utf8mb4=4n+2</text>
+
+    <line x1="566" y1="122" x2="740" y2="142" stroke="#1a73e8" marker-end="url(#arr2)"/>
+    <rect x="726" y="146" width="134" height="46" rx="6" fill="#e8f0fe" stroke="#1a73e8"/>
+    <text x="736" y="164" font-weight="bold" fill="#1a73e8">rows 是估算</text>
+    <text x="736" y="182" fill="#57606a">×filtered% 才是</text>
+  </g>
+
+  <!-- Extra 病症-药方对照 -->
+  <text x="40" y="226" font-size="15" font-weight="bold" fill="#24292f">Extra 常见值：病症 → 药方</text>
+  <g font-size="12.5">
+    <rect x="40" y="238" width="390" height="30" fill="#f6f8fa" stroke="#d0d7de"/>
+    <text x="52" y="258" font-weight="bold" fill="#57606a">Extra 标志 / 病症</text>
+    <rect x="430" y="238" width="430" height="30" fill="#f6f8fa" stroke="#d0d7de"/>
+    <text x="442" y="258" font-weight="bold" fill="#57606a">优化方向</text>
+    <g fill="#24292f">
+      <rect x="40" y="268" width="390" height="30" fill="#ffffff" stroke="#d0d7de"/><rect x="430" y="268" width="430" height="30" fill="#ffffff" stroke="#d0d7de"/>
+      <text x="52" y="288" font-family="Consolas, monospace" fill="#b06000">Using filesort</text><text x="240" y="288" fill="#57606a">排序没走索引</text>
+      <text x="442" y="288">排序列进索引，方向一致</text>
+
+      <rect x="40" y="298" width="390" height="30" fill="#ffffff" stroke="#d0d7de"/><rect x="430" y="298" width="430" height="30" fill="#ffffff" stroke="#d0d7de"/>
+      <text x="52" y="318" font-family="Consolas, monospace" fill="#b06000">Using temporary</text><text x="240" y="318" fill="#57606a">分组用了临时表</text>
+      <text x="442" y="318">group by / distinct 列走索引</text>
+
+      <rect x="40" y="328" width="390" height="30" fill="#ffffff" stroke="#d0d7de"/><rect x="430" y="328" width="430" height="30" fill="#ffffff" stroke="#d0d7de"/>
+      <text x="52" y="348" font-family="Consolas, monospace" fill="#d93025">Using join buffer</text><text x="240" y="348" fill="#57606a">被驱动表没走索引</text>
+      <text x="442" y="348" font-weight="bold" fill="#d93025">给 join 列加索引，收益最大</text>
+
+      <rect x="40" y="358" width="390" height="30" fill="#ffffff" stroke="#d0d7de"/><rect x="430" y="358" width="430" height="30" fill="#ffffff" stroke="#d0d7de"/>
+      <text x="52" y="378" font-family="Consolas, monospace" fill="#188038">Using index</text><text x="240" y="378" fill="#57606a">覆盖索引不回表</text>
+      <text x="442" y="378" fill="#188038">保持</text>
+
+      <rect x="40" y="388" width="390" height="30" fill="#ffffff" stroke="#d0d7de"/><rect x="430" y="388" width="430" height="30" fill="#ffffff" stroke="#d0d7de"/>
+      <text x="52" y="408" font-family="Consolas, monospace" fill="#188038">Using index condition</text><text x="240" y="408" fill="#57606a">ICP 下推生效</text>
+      <text x="442" y="408" fill="#188038">保持，可进一步做覆盖索引</text>
+
+      <rect x="40" y="418" width="390" height="30" fill="#ffffff" stroke="#d0d7de"/><rect x="430" y="418" width="430" height="30" fill="#ffffff" stroke="#d0d7de"/>
+      <text x="52" y="438" font-family="Consolas, monospace" fill="#188038">Using MRR</text><text x="240" y="438" fill="#57606a">回表已按主键排序</text>
+      <text x="442" y="438" fill="#188038">随机 IO 变顺序 IO，观察即可</text>
+    </g>
+  </g>
+
+  <!-- 深度分页优化前后对比 -->
+  <text x="40" y="486" font-size="15" font-weight="bold" fill="#24292f">深度分页 limit 1000000,20：优化前后扫描行数对比</text>
+  <g font-size="12.5">
+    <!-- bar 1 -->
+    <rect x="230" y="500" width="600" height="26" rx="4" fill="#d93025" opacity="0.85"/>
+    <text x="40" y="518" fill="#24292f">原始：全量回表</text>
+    <text x="836" y="518" fill="#d93025" font-weight="bold">≈100万行</text>
+    <!-- bar 2 -->
+    <rect x="230" y="536" width="240" height="26" rx="4" fill="#b06000" opacity="0.85"/>
+    <text x="40" y="554" fill="#24292f">延迟关联：索引内扫 + 20 次回表</text>
+    <text x="476" y="554" fill="#b06000" font-weight="bold">≈40万行成本</text>
+    <!-- bar 3 -->
+    <rect x="230" y="572" width="12" height="26" rx="4" fill="#188038" opacity="0.9"/>
+    <text x="40" y="590" fill="#24292f">游标法：id &gt; lastId</text>
+    <text x="248" y="590" fill="#188038" font-weight="bold">20 行（O(1)，但不能跳页）</text>
+  </g>
+
+  <rect x="40" y="610" width="820" height="24" rx="6" fill="#f6f8fa"/>
+  <text x="450" y="627" text-anchor="middle" font-size="12" fill="#57606a">判读顺序：type 定等级 → key/key_len 看索引生效列 → rows×filtered 估真实参与行数 → Extra 开药方</text>
+</svg>

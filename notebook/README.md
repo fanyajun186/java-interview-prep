@@ -1,0 +1,202 @@
+# notebook
+
+讲义存放处。**按主题分目录，不要直接堆在根下。**
+
+> 本文件由 `scripts/gen_notebook_index.py` 自动生成，最后更新于 2026-10-16。
+> 新增 / 重命名讲义后重跑脚本即可刷新清单：
+>
+> ```bash
+> python scripts/gen_notebook_index.py
+> ```
+
+## 总览
+
+- **11** 个主题目录，**83** 份讲义，累计约 **21,692** 行
+- 每个主题目录内可含一份 `README.md` 作为该主题的索引与高频题速查表
+
+## 目录约定
+
+主题目录名与 skill 知识地图文件一一对应：
+
+| 子目录 | 对应知识地图 | 内容 | 讲义数 |
+| --- | --- | --- | --- |
+| [`jvm/`](#jvm) | `01-jvm.md` | JVM 内存结构、GC、类加载、调优与排查 | 6 份 |
+| [`java-core/`](#java-core) | `02-java-core.md` | Java 底层：集合、并发/JMM、锁、类加载 | 7 份 |
+| [`java-design-patterns/`](#java-design-patterns) | `10-java-design-patterns.md` | GoF 23 种设计模式：定义、实现、源码案例、辨析与坑 | 24 份 |
+| [`mysql/`](#mysql) | `03-mysql.md` | 索引、事务与锁、MVCC、执行计划、主从复制 | 9 份 |
+| [`mq/`](#mq) | `04-mq.md` | RabbitMQ / RocketMQ / Kafka | 4 份 |
+| [`spring-distributed/`](#spring-distributed) | `05-spring-distributed.md` | 分布式事务、缓存一致性、限流熔断 | 1 份 |
+| [`xxl-job/`](#xxl-job) | `06-xxl-job.md` | 调度架构、分片、幂等、高可用 | 1 份 |
+| [`redis/`](#redis) | `07-redis.md` | 数据类型与编码、持久化、集群、缓存问题与分布式锁 | 9 份 |
+| [`ai/`](#ai) | `08-ai.md` | LLM / Prompt / RAG / Agent / Java 侧 AI 工程化 | 10 份 |
+| [`algorithm/`](#algorithm) | `09-algorithm.md` | 复杂度分析、套路模板、手撕题、海量数据处理 | 5 份 |
+| [`scenario-design/`](#scenario-design) | `11-scenario-design.md` | 系统设计场景题：红包 / 秒杀 / 短链 / 点赞 等 | 7 份 |
+
+## 讲义清单
+
+### jvm
+
+| 文件 | 标题 | 行数 |
+| --- | --- | --- |
+| [`jvm-cms.md`](jvm/jvm-cms.md) | JVM · CMS 收集器 | 165 |
+| [`jvm-g1-rset.md`](jvm/jvm-g1-rset.md) | JVM · G1 的 RSet | 155 |
+| [`jvm-tricolor-satb-incremental-update.md`](jvm/jvm-tricolor-satb-incremental-update.md) | 三色标记法、增量更新与 SATB 完整对比 | 183 |
+| [`jvm-write-barrier.md`](jvm/jvm-write-barrier.md) | 写前屏障与写后屏障（Write Barrier）详解 | 198 |
+| [`jvm-young-old-gen-gc-events.md`](jvm/jvm-young-old-gen-gc-events.md) | JVM 新生代划分与 GC 事件对照（Minor GC / Full GC / STW） | 182 |
+| [`jvm-young-old-gen-ratio-tuning.md`](jvm/jvm-young-old-gen-ratio-tuning.md) | 新生代 / 老年代比例的业务化设置：ParNew + CMS vs G1 | 303 |
+
+
+### java-core
+
+| 文件 | 标题 | 行数 |
+| --- | --- | --- |
+| [`java-core-aqs.md`](java-core/java-core-aqs.md) | AQS 原理 + Semaphore / CountDownLatch / CyclicBarrier | 487 |
+| [`java-core-cas.md`](java-core/java-core-cas.md) | CAS 特性 + 公平性问题 + ABA 问题 | 467 |
+| [`java-core-classloader-parent-delegation.md`](java-core/java-core-classloader-parent-delegation.md) | 类加载机制与双亲委派模型 | 438 |
+| [`java-core-concurrenthashmap.md`](java-core/java-core-concurrenthashmap.md) | ConcurrentHashMap 深度讲义（JDK 7 → JDK 8） | 551 |
+| [`java-core-hashmap.md`](java-core/java-core-hashmap.md) | HashMap 深度讲义（JDK 8） | 496 |
+| [`java-core-synchronized-lock-upgrade.md`](java-core/java-core-synchronized-lock-upgrade.md) | synchronized 与锁升级：从字节码到 ObjectMonitor | 544 |
+| [`java-core-volatile-memory.md`](java-core/java-core-volatile-memory.md) | volatile：可见性原理、MESI 协议与内存屏障 | 495 |
+
+
+### java-design-patterns
+
+| 文件 | 标题 | 行数 |
+| --- | --- | --- |
+| [`README.md`](java-design-patterns/README.md) | Java 设计模式 · 笔记索引 | 148 |
+| [`pattern-01-singleton.md`](java-design-patterns/pattern-01-singleton.md) | 单例模式（Singleton） | 275 |
+| [`pattern-02-factory-method.md`](java-design-patterns/pattern-02-factory-method.md) | 工厂方法（Factory Method） | 269 |
+| [`pattern-03-abstract-factory.md`](java-design-patterns/pattern-03-abstract-factory.md) | 抽象工厂（Abstract Factory） | 256 |
+| [`pattern-04-builder.md`](java-design-patterns/pattern-04-builder.md) | 建造者（Builder） | 253 |
+| [`pattern-05-prototype.md`](java-design-patterns/pattern-05-prototype.md) | 原型（Prototype） | 221 |
+| [`pattern-06-adapter.md`](java-design-patterns/pattern-06-adapter.md) | 适配器模式（Adapter） | 243 |
+| [`pattern-07-bridge.md`](java-design-patterns/pattern-07-bridge.md) | 桥接模式（Bridge） | 221 |
+| [`pattern-08-composite.md`](java-design-patterns/pattern-08-composite.md) | 组合模式（Composite） | 243 |
+| [`pattern-09-decorator.md`](java-design-patterns/pattern-09-decorator.md) | 装饰器模式（Decorator） | 246 |
+| [`pattern-10-facade.md`](java-design-patterns/pattern-10-facade.md) | 外观模式（Facade） | 225 |
+| [`pattern-11-flyweight.md`](java-design-patterns/pattern-11-flyweight.md) | 享元模式（Flyweight） | 221 |
+| [`pattern-12-proxy.md`](java-design-patterns/pattern-12-proxy.md) | 代理模式（Proxy） | 246 |
+| [`pattern-13-chain-of-responsibility.md`](java-design-patterns/pattern-13-chain-of-responsibility.md) | 责任链模式（Chain of Responsibility） | 253 |
+| [`pattern-14-command.md`](java-design-patterns/pattern-14-command.md) | 命令模式（Command） | 259 |
+| [`pattern-15-interpreter.md`](java-design-patterns/pattern-15-interpreter.md) | 解释器模式（Interpreter） | 238 |
+| [`pattern-16-iterator.md`](java-design-patterns/pattern-16-iterator.md) | 迭代器模式（Iterator） | 236 |
+| [`pattern-17-mediator.md`](java-design-patterns/pattern-17-mediator.md) | 中介者模式（Mediator） | 222 |
+| [`pattern-18-memento.md`](java-design-patterns/pattern-18-memento.md) | 备忘录模式（Memento） | 207 |
+| [`pattern-19-observer.md`](java-design-patterns/pattern-19-observer.md) | 观察者模式（Observer） | 218 |
+| [`pattern-20-state.md`](java-design-patterns/pattern-20-state.md) | 状态模式（State） | 237 |
+| [`pattern-21-strategy.md`](java-design-patterns/pattern-21-strategy.md) | 策略模式（Strategy） | 230 |
+| [`pattern-22-template-method.md`](java-design-patterns/pattern-22-template-method.md) | 模板方法模式（Template Method） | 210 |
+| [`pattern-23-visitor.md`](java-design-patterns/pattern-23-visitor.md) | 访问者模式（Visitor） | 228 |
+
+
+### mysql
+
+| 文件 | 标题 | 行数 |
+| --- | --- | --- |
+| [`mysql-architecture.md`](mysql/mysql-architecture.md) | MySQL 主题一：InnoDB 从 Server 层到引擎层的架构 | 206 |
+| [`mysql-btree-and-sharding.md`](mysql/mysql-btree-and-sharding.md) | MySQL 主题 2：为什么选 B+ 树、三层容量手算与 2000 万分表阈值 | 171 |
+| [`mysql-core-ten-topics.md`](mysql/mysql-core-ten-topics.md) | MySQL 核心十大主题 · 总纲索引（InnoDB） | 43 |
+| [`mysql-index-optimization.md`](mysql/mysql-index-optimization.md) | MySQL 索引失效与慢 SQL 分析优化（合并讲义） | 229 |
+| [`mysql-join-small-table-drives-big.md`](mysql/mysql-join-small-table-drives-big.md) | MySQL InnoDB 连表查询：为什么「小表驱动大表」 | 287 |
+| [`mysql-lock-with-without-transactional.md`](mysql/mysql-lock-with-without-transactional.md) | InnoDB + RR：加与不加 @Transactional 时的加锁行为全解 | 320 |
+| [`mysql-locks-deadlock.md`](mysql/mysql-locks-deadlock.md) | MySQL 锁体系与死锁：一条线讲透 | 273 |
+| [`mysql-logs.md`](mysql/mysql-logs.md) | MySQL 三大日志：undo log / redo log / binlog | 214 |
+| [`mysql-transaction-mvcc.md`](mysql/mysql-transaction-mvcc.md) | MySQL 事务隔离、MVCC 与当前读：一条线讲透 | 218 |
+
+配图 / 附件：`mysql/images/mysql-arch-layers.png`、`mysql/images/mysql-arch-page.png`、`mysql/images/mysql-btree-capacity.png`、`mysql/images/mysql-btree-structure.png`、`mysql/images/mysql-index-explain.png`、`mysql/images/mysql-index-leftmost.png`、`mysql/images/mysql-locks-deadlock.png`、`mysql/images/mysql-locks-nextkey.png`、`mysql/images/mysql-logs-compare.png`、`mysql/images/mysql-logs-update-flow.png`、`mysql/images/mysql-mvcc-readview.png`、`mysql/images/mysql-mvcc-version-chain.png`、`mysql/images/svg-src/mysql-arch-layers.svg`、`mysql/images/svg-src/mysql-arch-page.svg`、`mysql/images/svg-src/mysql-btree-capacity.svg`、`mysql/images/svg-src/mysql-btree-structure.svg`、`mysql/images/svg-src/mysql-index-explain.svg`、`mysql/images/svg-src/mysql-index-leftmost.svg`、`mysql/images/svg-src/mysql-locks-deadlock.svg`、`mysql/images/svg-src/mysql-locks-nextkey.svg`、`mysql/images/svg-src/mysql-logs-compare.svg`、`mysql/images/svg-src/mysql-logs-update-flow.svg`、`mysql/images/svg-src/mysql-mvcc-readview.svg`、`mysql/images/svg-src/mysql-mvcc-version-chain.svg`、`mysql/images/svg2png.js`
+
+
+### mq
+
+| 文件 | 标题 | 行数 |
+| --- | --- | --- |
+| [`README.md`](mq/README.md) | 消息中间件 | 36 |
+| [`mq-kafka.md`](mq/mq-kafka.md) | 消息中间件 · Kafka | 365 |
+| [`mq-rabbitmq.md`](mq/mq-rabbitmq.md) | 消息中间件 · RabbitMQ | 395 |
+| [`mq-rocketmq.md`](mq/mq-rocketmq.md) | 消息中间件 · RocketMQ | 389 |
+
+
+### spring-distributed
+
+| 文件 | 标题 | 行数 |
+| --- | --- | --- |
+| [`spring-distributed-transactions.md`](spring-distributed/spring-distributed-transactions.md) | 分布式事务：强一致 XA/2PC、最终一致 TCC/Saga/可靠消息与 TCC 三大防御 | 284 |
+
+
+### xxl-job
+
+| 文件 | 标题 | 行数 |
+| --- | --- | --- |
+| [`xxl-job-usage-and-internals.md`](xxl-job/xxl-job-usage-and-internals.md) | XXL-JOB · 使用介绍、表结构与底层实现原理 | 632 |
+
+
+### redis
+
+| 文件 | 标题 | 行数 |
+| --- | --- | --- |
+| [`README.md`](redis/README.md) | Redis · 笔记索引 | 71 |
+| [`redis-01-data-types.md`](redis/redis-01-data-types.md) | Redis 基础类型：使用场景与底层数据结构 | 216 |
+| [`redis-02-persistence.md`](redis/redis-02-persistence.md) | Redis 持久化：RDB 与 AOF | 534 |
+| [`redis-03-replication-sentinel-cluster.md`](redis/redis-03-replication-sentinel-cluster.md) | Redis 主从复制、哨兵与集群：通信与选举 | 181 |
+| [`redis-04-single-thread-model.md`](redis/redis-04-single-thread-model.md) | Redis 单线程模型与 6.0 多线程 IO | 115 |
+| [`redis-05-internal-encoding.md`](redis/redis-05-internal-encoding.md) | Redis 底层数据结构深度：SDS / listpack / quicklist / dict / intset / skiplist | 185 |
+| [`redis-06-eviction-policies.md`](redis/redis-06-eviction-policies.md) | Redis 内存淘汰策略：LRU / LFU 与 8 种 maxmemory-policy | 456 |
+| [`redis-07-cluster-deep-dive.md`](redis/redis-07-cluster-deep-dive.md) | Redis Cluster 深入：槽路由、在线迁移、故障转移、Gossip、脑裂 | 361 |
+| [`redis-08-concurrency-atomicity.md`](redis/redis-08-concurrency-atomicity.md) | Redis 并发安全：单线程下多条命令的原子性怎么保证 | 205 |
+
+配图 / 附件：`redis/images/redis-cluster-01-slot-routing.png`、`redis/images/redis-cluster-02-moved-ask.png`、`redis/images/redis-cluster-03-failover.png`、`redis/images/redis-cluster-04-gossip.png`、`redis/images/redis-cluster-05-split-brain.png`、`redis/images/redis-concurrency-01-atomicity.png`、`redis/images/redis-ds-01-overview.png`、`redis/images/redis-ds-02-sds.png`、`redis/images/redis-ds-03-listpack-vs-ziplist.png`、`redis/images/redis-ds-04-quicklist.png`、`redis/images/redis-ds-05-dict-rehash.png`、`redis/images/redis-ds-06-intset.png`、`redis/images/redis-ds-07-zset-skiplist.png`、`redis/images/svg-src/redis-cluster-01-slot-routing.svg`、`redis/images/svg-src/redis-cluster-02-moved-ask.svg`、`redis/images/svg-src/redis-cluster-03-failover.svg`、`redis/images/svg-src/redis-cluster-04-gossip.svg`、`redis/images/svg-src/redis-cluster-05-split-brain.svg`、`redis/images/svg-src/redis-concurrency-01-atomicity.svg`、`redis/images/svg-src/redis-ds-01-overview.svg`、`redis/images/svg-src/redis-ds-02-sds.svg`、`redis/images/svg-src/redis-ds-03-listpack-vs-ziplist.svg`、`redis/images/svg-src/redis-ds-04-quicklist.svg`、`redis/images/svg-src/redis-ds-05-dict-rehash.svg`、`redis/images/svg-src/redis-ds-06-intset.svg`、`redis/images/svg-src/redis-ds-07-zset-skiplist.svg`、`redis/images/svg2png.js`
+
+
+### ai
+
+| 文件 | 标题 | 行数 |
+| --- | --- | --- |
+| [`README.md`](ai/README.md) | AI 应用开发 · 笔记索引 | 57 |
+| [`ai-01-interview-outline.md`](ai/ai-01-interview-outline.md) | AI 应用方向面试大纲与背诵框架 | 101 |
+| [`ai-02-llm-rag-basics.md`](ai/ai-02-llm-rag-basics.md) | LLM 基础概念与 RAG 完整链路 | 140 |
+| [`ai-03-agent-tool-calling.md`](ai/ai-03-agent-tool-calling.md) | Agent、Tool Calling 与 ReAct | 238 |
+| [`ai-04-skills-mechanism.md`](ai/ai-04-skills-mechanism.md) | Skills 机制：SKILL.md 如何工作 | 127 |
+| [`ai-05-java-engineering.md`](ai/ai-05-java-engineering.md) | Java 工程落地：从 SSE 到自研工具调用运行时 | 264 |
+| [`ai-06-project-experience.md`](ai/ai-06-project-experience.md) | 项目经验：RAG 知识库 STAR 故事与 autocava-ai 提炼 | 81 |
+| [`ai-07-agent-paradigms.md`](ai/ai-07-agent-paradigms.md) | Agent 范式：定义、组件、推理模式与 Workflow 的边界 | 282 |
+| [`ai-08-rag-and-vector-db.md`](ai/ai-08-rag-and-vector-db.md) | RAG 工作流程进阶与向量数据库 | 155 |
+| [`ai-project-interview.md`](ai/ai-project-interview.md) | ChatController\#chatMessagesStream 提问全链路梳理 | 96 |
+
+配图 / 附件：`ai/images/ai-chat-full-flow.png`、`ai/images/svg-src/ai-chat-full-flow.svg`、`ai/images/svg2png.js`
+
+
+### algorithm
+
+| 文件 | 标题 | 行数 |
+| --- | --- | --- |
+| [`README.md`](algorithm/README.md) | 算法与手写代码 | 50 |
+| [`algorithm-01-handwritten-basics.md`](algorithm/algorithm-01-handwritten-basics.md) | 算法 · 手写基础题与并发小题 | 546 |
+| [`algorithm-02-sorting-search.md`](algorithm/algorithm-02-sorting-search.md) | 算法 · 排序与查找 | 629 |
+| [`algorithm-03-data-structure.md`](algorithm/algorithm-03-data-structure.md) | 算法 · 数据结构手写题 | 610 |
+| [`algorithm-04-leetcode-hot.md`](algorithm/algorithm-04-leetcode-hot.md) | 算法 · 力扣高频题 | 635 |
+
+
+### scenario-design
+
+| 文件 | 标题 | 行数 |
+| --- | --- | --- |
+| [`README.md`](scenario-design/README.md) | 场景题（系统设计）· 笔记索引 | 48 |
+| [`scenario-01-red-packet.md`](scenario-design/scenario-01-red-packet.md) | 场景题：设计一个微信红包系统 | 228 |
+| [`scenario-02-seckill.md`](scenario-design/scenario-02-seckill.md) | 场景题：设计一个秒杀系统 | 172 |
+| [`scenario-03-short-url.md`](scenario-design/scenario-03-short-url.md) | 场景题：设计一个短链系统 | 149 |
+| [`scenario-04-like-counter.md`](scenario-design/scenario-04-like-counter.md) | 场景题：点赞 / 计数系统 | 149 |
+| [`scenario-05-nearby-geo.md`](scenario-design/scenario-05-nearby-geo.md) | 场景题：附近的人 / 附近的门店 | 128 |
+| [`scenario-06-checkin-bitmap.md`](scenario-design/scenario-06-checkin-bitmap.md) | 场景题：签到打卡与缺卡查询（Redis Bitmap） | 152 |
+
+## 文件命名
+
+- `jvm/jvm-cms.md`
+- `mysql/mysql-core-ten-topics.md`
+- `redis/redis-05-internal-encoding.md`
+
+主题前缀保留（便于单独打开文件时辨认来源），分类靠目录表达。
+
+## 写作要求
+
+只记录自己的话、源码要点、踩过的坑，不要复制整段资料。
+结构参考 skill 的 `assets/lecture-template.md`。

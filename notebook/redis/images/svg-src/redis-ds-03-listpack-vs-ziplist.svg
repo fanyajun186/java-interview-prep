@@ -1,0 +1,126 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 540" font-family="Microsoft YaHei, PingFang SC, sans-serif">
+  <rect width="900" height="540" fill="#ffffff"/>
+  <text x="450" y="32" text-anchor="middle" font-size="20" font-weight="bold" fill="#24292f">listpack 为什么能取代 ziplist：一个字段的差别</text>
+
+  <defs>
+    <marker id="lpR" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#d93025"/></marker>
+    <marker id="lpG" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#188038"/></marker>
+  </defs>
+
+  <!-- 左：ziplist -->
+  <rect x="40" y="52" width="390" height="290" rx="10" fill="#ffffff" stroke="#d93025"/>
+  <text x="235" y="78" text-anchor="middle" font-size="15" font-weight="bold" fill="#d93025">ziplist（7.0 起废弃）</text>
+  <text x="235" y="98" text-anchor="middle" font-size="12" fill="#24292f">entry = prevlen + encoding + data</text>
+  <text x="235" y="118" text-anchor="middle" font-size="11" fill="#57606a">prevlen 记的是「前一个 entry 有多长」→ 跨条目依赖</text>
+
+  <g>
+    <rect x="60" y="134" width="110" height="40" fill="#fce8e6" stroke="#d93025"/>
+    <text x="115" y="152" text-anchor="middle" font-size="11" fill="#d93025">prevlen</text>
+    <text x="115" y="166" text-anchor="middle" font-size="10" fill="#57606a">1 字节</text>
+    <rect x="170" y="134" width="110" height="40" fill="#ffffff" stroke="#57606a"/>
+    <text x="225" y="158" text-anchor="middle" font-size="11" fill="#24292f">encoding+data</text>
+    <rect x="280" y="134" width="130" height="40" fill="#ffffff" stroke="#57606a"/>
+    <text x="345" y="158" text-anchor="middle" font-size="11" fill="#24292f">250 字节</text>
+  </g>
+  <text x="420" y="158" font-size="12" fill="#57606a">entry A</text>
+
+  <g>
+    <rect x="60" y="182" width="110" height="40" fill="#fce8e6" stroke="#d93025"/>
+    <text x="115" y="200" text-anchor="middle" font-size="11" fill="#d93025">prevlen</text>
+    <text x="115" y="214" text-anchor="middle" font-size="10" fill="#57606a">1 字节</text>
+    <rect x="170" y="182" width="110" height="40" fill="#ffffff" stroke="#57606a"/>
+    <text x="225" y="206" text-anchor="middle" font-size="11" fill="#24292f">encoding+data</text>
+    <rect x="280" y="182" width="130" height="40" fill="#ffffff" stroke="#57606a"/>
+    <text x="345" y="206" text-anchor="middle" font-size="11" fill="#24292f">251 字节</text>
+  </g>
+  <text x="420" y="206" font-size="12" fill="#57606a">entry B</text>
+
+  <g>
+    <rect x="60" y="230" width="110" height="40" fill="#fce8e6" stroke="#d93025"/>
+    <text x="115" y="248" text-anchor="middle" font-size="11" fill="#d93025">prevlen</text>
+    <text x="115" y="262" text-anchor="middle" font-size="10" fill="#57606a">1 字节</text>
+    <rect x="170" y="230" width="110" height="40" fill="#ffffff" stroke="#57606a"/>
+    <text x="225" y="254" text-anchor="middle" font-size="11" fill="#24292f">encoding+data</text>
+    <rect x="280" y="230" width="130" height="40" fill="#ffffff" stroke="#57606a"/>
+    <text x="345" y="254" text-anchor="middle" font-size="11" fill="#24292f">252 字节</text>
+  </g>
+  <text x="420" y="254" font-size="12" fill="#57606a">entry C</text>
+
+  <rect x="60" y="288" width="350" height="42" rx="6" fill="#fff4e5" stroke="#b06000"/>
+  <text x="235" y="306" text-anchor="middle" font-size="12" font-weight="bold" fill="#b06000">B 改成 254 字节 → C 的 prevlen 需 5 字节 → C 变长</text>
+  <text x="235" y="323" text-anchor="middle" font-size="11" fill="#d93025">C 变长又可能跨过阈值 → 连锁到 D、E……最坏 O(n²) realloc</text>
+
+  <!-- 右：listpack -->
+  <rect x="470" y="52" width="390" height="290" rx="10" fill="#ffffff" stroke="#188038"/>
+  <text x="665" y="78" text-anchor="middle" font-size="15" font-weight="bold" fill="#188038">listpack（5.0 引入，7.0 全面取代）</text>
+  <text x="665" y="98" text-anchor="middle" font-size="12" fill="#24292f">entry = encoding + data + backlen</text>
+  <text x="665" y="118" text-anchor="middle" font-size="11" fill="#57606a">backlen 记的是「自己有多长」→ 条目间彻底解耦</text>
+
+  <g>
+    <rect x="490" y="134" width="110" height="40" fill="#ffffff" stroke="#57606a"/>
+    <text x="545" y="158" text-anchor="middle" font-size="11" fill="#24292f">encoding+data</text>
+    <rect x="600" y="134" width="110" height="40" fill="#e6f4ea" stroke="#188038"/>
+    <text x="655" y="152" text-anchor="middle" font-size="11" fill="#188038">backlen</text>
+    <text x="655" y="166" text-anchor="middle" font-size="10" fill="#57606a">记自身长度</text>
+    <rect x="710" y="134" width="130" height="40" fill="#ffffff" stroke="#57606a"/>
+    <text x="775" y="158" text-anchor="middle" font-size="11" fill="#24292f">250 字节</text>
+  </g>
+  <text x="490" y="182" font-size="1" fill="#fff"> </text>
+
+  <g>
+    <rect x="490" y="190" width="110" height="40" fill="#ffffff" stroke="#57606a"/>
+    <text x="545" y="214" text-anchor="middle" font-size="11" fill="#24292f">encoding+data</text>
+    <rect x="600" y="190" width="110" height="40" fill="#e6f4ea" stroke="#188038"/>
+    <text x="655" y="208" text-anchor="middle" font-size="11" fill="#188038">backlen</text>
+    <text x="655" y="222" text-anchor="middle" font-size="10" fill="#57606a">记自身长度</text>
+    <rect x="710" y="190" width="130" height="40" fill="#ffffff" stroke="#57606a"/>
+    <text x="775" y="214" text-anchor="middle" font-size="11" fill="#24292f">254 字节</text>
+  </g>
+
+  <line x1="655" y1="238" x2="655" y2="256" stroke="#188038" marker-end="url(#lpG)"/>
+  <text x="670" y="252" font-size="11" fill="#188038">反向遍历靠它回跳</text>
+
+  <g>
+    <rect x="490" y="262" width="110" height="40" fill="#ffffff" stroke="#57606a"/>
+    <text x="545" y="286" text-anchor="middle" font-size="11" fill="#24292f">encoding+data</text>
+    <rect x="600" y="262" width="110" height="40" fill="#e6f4ea" stroke="#188038"/>
+    <text x="655" y="286" text-anchor="middle" font-size="11" fill="#188038">backlen</text>
+    <rect x="710" y="262" width="130" height="40" fill="#ffffff" stroke="#57606a"/>
+    <text x="775" y="286" text-anchor="middle" font-size="11" fill="#24292f">252 字节</text>
+  </g>
+
+  <rect x="490" y="310" width="350" height="26" rx="6" fill="#e6f4ea" stroke="#188038"/>
+  <text x="665" y="328" text-anchor="middle" font-size="12" font-weight="bold" fill="#188038">中间条目变长不影响任何邻居 → 级联更新被消除</text>
+
+  <!-- 底部对比 -->
+  <rect x="40" y="358" width="820" height="164" rx="10" fill="#f6f8fa" stroke="#d0d7de"/>
+  <text x="60" y="384" font-size="13" font-weight="bold" fill="#24292f">两张对照表</text>
+
+  <rect x="60" y="394" width="110" height="30" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="115" y="414" text-anchor="middle" font-size="12" font-weight="bold" fill="#24292f">维度</text>
+  <rect x="176" y="394" width="330" height="30" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="341" y="414" text-anchor="middle" font-size="12" font-weight="bold" fill="#d93025">ziplist</text>
+  <rect x="512" y="394" width="328" height="30" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="676" y="414" text-anchor="middle" font-size="12" font-weight="bold" fill="#188038">listpack</text>
+
+  <rect x="60" y="428" width="110" height="30" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="115" y="448" text-anchor="middle" font-size="11" fill="#24292f">长度字段</text>
+  <rect x="176" y="428" width="330" height="30" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="341" y="448" text-anchor="middle" font-size="11" fill="#24292f">prevlen（前一 entry 长度，1 或 5 字节）</text>
+  <rect x="512" y="428" width="328" height="30" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="676" y="448" text-anchor="middle" font-size="11" fill="#24292f">backlen（自身长度，1~5 字节变长）</text>
+
+  <rect x="60" y="462" width="110" height="30" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="115" y="482" text-anchor="middle" font-size="11" fill="#24292f">条目耦合</text>
+  <rect x="176" y="462" width="330" height="30" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="341" y="482" text-anchor="middle" font-size="11" fill="#d93025">耦合，级联更新最坏 O(n²)</text>
+  <rect x="512" y="462" width="328" height="30" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="676" y="482" text-anchor="middle" font-size="11" fill="#188038">完全解耦，无级联</text>
+
+  <rect x="60" y="496" width="110" height="20" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="115" y="510" text-anchor="middle" font-size="11" fill="#24292f">查找</text>
+  <rect x="176" y="496" width="330" height="20" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="341" y="510" text-anchor="middle" font-size="11" fill="#57606a">O(n) 顺序扫</text>
+  <rect x="512" y="496" width="328" height="20" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="676" y="510" text-anchor="middle" font-size="11" fill="#57606a">同样是 O(n)，所以只允许小数据用</text>
+</svg>

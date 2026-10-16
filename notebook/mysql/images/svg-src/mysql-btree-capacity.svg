@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 640" font-family="Microsoft YaHei, PingFang SC, sans-serif">
+  <defs>
+    <marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1a73e8"/>
+    </marker>
+  </defs>
+
+  <rect width="900" height="640" fill="#ffffff"/>
+  <text x="450" y="36" text-anchor="middle" font-size="22" font-weight="bold" fill="#24292f">三层 B+ 树容量手算：为什么是 2190 万行</text>
+
+  <!-- 手算链路 -->
+  <g font-size="13">
+    <rect x="40" y="66" width="180" height="74" rx="8" fill="#e8f0fe" stroke="#1a73e8" stroke-width="1.5"/>
+    <text x="130" y="92" text-anchor="middle" font-weight="bold" fill="#1a73e8">① 16KB 页</text>
+    <text x="130" y="112" text-anchor="middle" fill="#24292f">16384B - 200B 开销</text>
+    <text x="130" y="130" text-anchor="middle" fill="#24292f">≈ 16200B 可用</text>
+
+    <rect x="270" y="66" width="180" height="74" rx="8" fill="#e8f0fe" stroke="#1a73e8" stroke-width="1.5"/>
+    <text x="360" y="92" text-anchor="middle" font-weight="bold" fill="#1a73e8">② 非叶页扇出</text>
+    <text x="360" y="112" text-anchor="middle" fill="#24292f">键 8B + 页号 6B = 14B</text>
+    <text x="360" y="130" text-anchor="middle" fill="#24292f">16200/14 ≈ 1170 指针</text>
+
+    <rect x="500" y="66" width="180" height="74" rx="8" fill="#e8f0fe" stroke="#1a73e8" stroke-width="1.5"/>
+    <text x="590" y="92" text-anchor="middle" font-weight="bold" fill="#1a73e8">③ 叶子页总数</text>
+    <text x="590" y="112" text-anchor="middle" fill="#24292f">1170 × 1170</text>
+    <text x="590" y="130" text-anchor="middle" fill="#24292f">≈ 137 万个叶子页</text>
+
+    <rect x="730" y="66" width="150" height="74" rx="8" fill="#e6f4ea" stroke="#188038" stroke-width="2"/>
+    <text x="805" y="92" text-anchor="middle" font-weight="bold" fill="#188038">④ 总容量</text>
+    <text x="805" y="112" text-anchor="middle" fill="#24292f">137万 × 16 行</text>
+    <text x="805" y="130" text-anchor="middle" font-weight="bold" fill="#188038">≈ 2190 万行</text>
+  </g>
+  <line x1="220" y1="103" x2="268" y2="103" stroke="#1a73e8" stroke-width="2" marker-end="url(#arr2)"/>
+  <line x1="450" y1="103" x2="498" y2="103" stroke="#1a73e8" stroke-width="2" marker-end="url(#arr2)"/>
+  <line x1="680" y1="103" x2="728" y2="103" stroke="#1a73e8" stroke-width="2" marker-end="url(#arr2)"/>
+
+  <text x="450" y="168" text-anchor="middle" font-size="12" fill="#57606a">前提：行宽 1KB，叶子页每页约 16 行（扣除页开销后约 15-16 行）</text>
+
+  <!-- 行宽-容量拐点对照表 -->
+  <text x="450" y="206" text-anchor="middle" font-size="16" font-weight="bold" fill="#24292f">行宽 → 三层容量拐点（层高 3 变 4 的分界线）</text>
+
+  <!-- 表头 -->
+  <g font-size="12">
+    <rect x="120" y="222" width="110" height="30" fill="#f6f8fa" stroke="#d0d7de"/>
+    <text x="175" y="242" text-anchor="middle" font-weight="bold" fill="#24292f">行宽</text>
+    <rect x="230" y="222" width="110" height="30" fill="#f6f8fa" stroke="#d0d7de"/>
+    <text x="285" y="242" text-anchor="middle" font-weight="bold" fill="#24292f">每页行数</text>
+    <rect x="340" y="222" width="440" height="30" fill="#f6f8fa" stroke="#d0d7de"/>
+    <text x="560" y="242" text-anchor="middle" font-weight="bold" fill="#24292f">三层容量（横向条形，对数刻度示意）</text>
+  </g>
+
+  <!-- 行 100B -->
+  <g font-size="12" fill="#24292f">
+    <text x="175" y="277" text-anchor="middle">100B</text>
+    <text x="285" y="277" text-anchor="middle">≈160</text>
+    <rect x="350" y="262" width="380" height="20" rx="3" fill="#188038"/>
+    <text x="736" y="277" fill="#188038">≈2.2 亿</text>
+  </g>
+  <!-- 行 500B -->
+  <g font-size="12" fill="#24292f">
+    <text x="175" y="317" text-anchor="middle">500B</text>
+    <text x="285" y="317" text-anchor="middle">≈32</text>
+    <rect x="350" y="302" width="300" height="20" rx="3" fill="#188038" opacity="0.85"/>
+    <text x="656" y="317" fill="#188038">≈4400 万</text>
+  </g>
+  <!-- 行 1KB 高亮 -->
+  <g font-size="12" fill="#24292f">
+    <rect x="120" y="332" width="660" height="30" fill="#fef7e0"/>
+    <text x="175" y="352" text-anchor="middle" font-weight="bold">1KB</text>
+    <text x="285" y="352" text-anchor="middle" font-weight="bold">≈16</text>
+    <rect x="350" y="337" width="240" height="20" rx="3" fill="#b06000"/>
+    <text x="596" y="352" font-weight="bold" fill="#b06000">≈2190 万（「2000 万定律」来源）</text>
+  </g>
+  <!-- 行 2KB -->
+  <g font-size="12" fill="#24292f">
+    <text x="175" y="387" text-anchor="middle">2KB</text>
+    <text x="285" y="387" text-anchor="middle">≈8</text>
+    <rect x="350" y="372" width="185" height="20" rx="3" fill="#d93025" opacity="0.85"/>
+    <text x="541" y="387" fill="#d93025">≈1100 万</text>
+  </g>
+  <!-- 行 4KB -->
+  <g font-size="12" fill="#24292f">
+    <text x="175" y="422" text-anchor="middle">4KB</text>
+    <text x="285" y="422" text-anchor="middle">≈4</text>
+    <rect x="350" y="407" width="140" height="20" rx="3" fill="#d93025"/>
+    <text x="496" y="422" fill="#d93025">≈550 万</text>
+  </g>
+
+  <!-- 结论 -->
+  <rect x="60" y="460" width="780" height="140" rx="8" fill="#f6f8fa" stroke="#d0d7de"/>
+  <text x="450" y="490" text-anchor="middle" font-size="14" font-weight="bold" fill="#24292f">「2000 万」不是定律，是行宽 1KB 前提下的推论</text>
+  <text x="450" y="515" text-anchor="middle" font-size="12" fill="#57606a">真正的技术信号：B+ 树层高从 3 变 4 —— 多一次随机 IO，且中间页数量暴涨导致 Buffer Pool 缓存不下</text>
+  <text x="450" y="540" text-anchor="middle" font-size="12" fill="#24292f">行宽 100B 的流水表 2 亿行仍是三层；行宽 4KB 的宽表 500 万行就到拐点</text>
+  <text x="450" y="565" text-anchor="middle" font-size="12" fill="#1a73e8">分表前先走：索引优化 → 读写分离 → 冷热归档 → 垂直拆分（减小行宽 = 抬高拐点），分表是最后手段</text>
+  <text x="450" y="588" text-anchor="middle" font-size="12" fill="#57606a">硬指标：单表文件 &gt; 几十 GB ｜ DDL/备份耗时不可接受 ｜ Buffer Pool 命中率下降 ｜ 已到 4 层且归档无法压回</text>
+</svg>

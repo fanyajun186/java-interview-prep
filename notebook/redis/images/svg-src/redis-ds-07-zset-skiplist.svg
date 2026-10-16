@@ -1,0 +1,134 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 580" font-family="Microsoft YaHei, PingFang SC, sans-serif">
+  <rect width="900" height="580" fill="#ffffff"/>
+  <text x="450" y="32" text-anchor="middle" font-size="20" font-weight="bold" fill="#24292f">ZSet = skiplist + dict：两套结构共享同一份 member</text>
+
+  <defs>
+    <marker id="zsG" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#188038"/></marker>
+    <marker id="zsB" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1a73e8"/></marker>
+  </defs>
+
+  <!-- 左：跳表 -->
+  <rect x="40" y="52" width="560" height="320" rx="10" fill="#ffffff" stroke="#1a73e8"/>
+  <text x="320" y="76" text-anchor="middle" font-size="15" font-weight="bold" fill="#1a73e8">skiplist（按 score 有序）</text>
+  <text x="320" y="96" text-anchor="middle" font-size="11" fill="#57606a">负责 ZRANGE / ZRANGEBYSCORE / ZRANK：O(log N) 定位 + O(M) 顺序遍历</text>
+
+  <!-- header -->
+  <rect x="60" y="110" width="80" height="30" fill="#e8f0fe" stroke="#1a73e8"/>
+  <text x="100" y="130" text-anchor="middle" font-size="11" font-weight="bold" fill="#1a73e8">header</text>
+
+  <!-- 节点 -->
+  <rect x="180" y="110" width="80" height="30" fill="#ffffff" stroke="#57606a"/>
+  <text x="220" y="130" text-anchor="middle" font-size="11" fill="#24292f">score 1</text>
+  <rect x="300" y="110" width="80" height="30" fill="#ffffff" stroke="#57606a"/>
+  <text x="340" y="130" text-anchor="middle" font-size="11" fill="#24292f">score 5</text>
+  <rect x="420" y="110" width="80" height="30" fill="#ffffff" stroke="#57606a"/>
+  <text x="460" y="130" text-anchor="middle" font-size="11" fill="#24292f">score 9</text>
+  <rect x="540" y="110" width="80" height="30" fill="#ffffff" stroke="#57606a"/>
+  <text x="580" y="130" text-anchor="middle" font-size="11" fill="#24292f">score 12</text>
+
+  <!-- L2 -->
+  <g stroke="#1a73e8" stroke-width="1.6">
+    <line x1="140" y1="170" x2="176" y2="170"/>
+    <line x1="264" y1="170" x2="296" y2="170"/>
+    <line x1="384" y1="170" x2="416" y2="170"/>
+    <line x1="504" y1="170" x2="536" y2="170"/>
+  </g>
+  <text x="60" y="175" font-size="11" fill="#1a73e8">L2</text>
+  <rect x="180" y="156" width="80" height="28" fill="#e8f0fe" stroke="#1a73e8" stroke-opacity="0.5"/>
+  <rect x="420" y="156" width="80" height="28" fill="#e8f0fe" stroke="#1a73e8" stroke-opacity="0.5"/>
+  <line x1="260" y1="170" x2="416" y2="170" stroke="#1a73e8" stroke-width="1.6"/>
+  <line x1="500" y1="170" x2="620" y2="170" stroke="#1a73e8" stroke-width="1.6"/>
+  <text x="640" y="175" font-size="10" fill="#57606a">→ NULL</text>
+
+  <!-- L1 -->
+  <g stroke="#1a73e8" stroke-width="1.6">
+    <line x1="140" y1="212" x2="176" y2="212"/>
+    <line x1="264" y1="212" x2="296" y2="212"/>
+    <line x1="384" y1="212" x2="416" y2="212"/>
+    <line x1="504" y1="212" x2="536" y2="212"/>
+    <line x1="260" y1="212" x2="296" y2="212"/>
+    <line x1="500" y1="212" x2="536" y2="212"/>
+  </g>
+  <text x="60" y="217" font-size="11" fill="#1a73e8">L1</text>
+  <rect x="180" y="198" width="80" height="28" fill="#e8f0fe" stroke="#1a73e8" stroke-opacity="0.5"/>
+  <rect x="300" y="198" width="80" height="28" fill="#e8f0fe" stroke="#1a73e8" stroke-opacity="0.5"/>
+  <rect x="420" y="198" width="80" height="28" fill="#e8f0fe" stroke="#1a73e8" stroke-opacity="0.5"/>
+  <rect x="540" y="198" width="80" height="28" fill="#e8f0fe" stroke="#1a73e8" stroke-opacity="0.5"/>
+  <line x1="620" y1="212" x2="660" y2="212" stroke="#1a73e8" stroke-width="1.6"/>
+  <text x="664" y="217" font-size="10" fill="#57606a">NULL</text>
+
+  <!-- L0 -->
+  <g stroke="#188038" stroke-width="2">
+    <line x1="140" y1="258" x2="176" y2="258"/>
+    <line x1="264" y1="258" x2="296" y2="258"/>
+    <line x1="384" y1="258" x2="416" y2="258"/>
+    <line x1="504" y1="258" x2="536" y2="258"/>
+  </g>
+  <text x="60" y="263" font-size="11" fill="#188038">L0</text>
+  <rect x="180" y="244" width="80" height="28" fill="#e6f4ea" stroke="#188038"/>
+  <rect x="300" y="244" width="80" height="28" fill="#e6f4ea" stroke="#188038"/>
+  <rect x="420" y="244" width="80" height="28" fill="#e6f4ea" stroke="#188038"/>
+  <rect x="540" y="244" width="80" height="28" fill="#e6f4ea" stroke="#188038"/>
+  <line x1="620" y1="258" x2="660" y2="258" stroke="#188038" stroke-width="2"/>
+  <text x="664" y="263" font-size="10" fill="#57606a">NULL</text>
+  <text x="320" y="290" text-anchor="middle" font-size="11" fill="#188038">L0 是完整有序链表，ZRANGE 找到起点后沿它顺序遍历</text>
+
+  <!-- 节点结构 -->
+  <rect x="60" y="302" width="530" height="56" rx="6" fill="#f6f8fa" stroke="#d0d7de"/>
+  <text x="76" y="322" font-size="12" font-weight="bold" fill="#24292f">节点 = ele(sds) + score + backward + level[]</text>
+  <text x="76" y="342" font-size="11" fill="#24292f">每个 level 带 forward 指针与 span（跨越的节点数）→ ZRANK 把路径上的 span 累加，不用额外计数</text>
+  <text x="76" y="356" font-size="11" fill="#57606a">层高随机：每层以 p = 0.25 概率晋升，最高 32 层，期望每节点 1.33 个前进指针</text>
+
+  <!-- 右：dict -->
+  <rect x="620" y="52" width="240" height="320" rx="10" fill="#ffffff" stroke="#b06000"/>
+  <text x="740" y="76" text-anchor="middle" font-size="15" font-weight="bold" fill="#b06000">dict（member → score）</text>
+  <text x="740" y="96" text-anchor="middle" font-size="11" fill="#57606a">负责 ZSCORE / ZINCRBY /</text>
+  <text x="740" y="112" text-anchor="middle" font-size="11" fill="#57606a">ZADD 判重：O(1)</text>
+
+  <rect x="640" y="126" width="200" height="28" fill="#fff4e5" stroke="#b06000"/>
+  <text x="740" y="145" text-anchor="middle" font-size="11" fill="#24292f">member A → 1</text>
+  <rect x="640" y="158" width="200" height="28" fill="#fff4e5" stroke="#b06000"/>
+  <text x="740" y="177" text-anchor="middle" font-size="11" fill="#24292f">member B → 5</text>
+  <rect x="640" y="190" width="200" height="28" fill="#fff4e5" stroke="#b06000"/>
+  <text x="740" y="209" text-anchor="middle" font-size="11" fill="#24292f">member C → 9</text>
+  <rect x="640" y="222" width="200" height="28" fill="#fff4e5" stroke="#b06000"/>
+  <text x="740" y="241" text-anchor="middle" font-size="11" fill="#24292f">member D → 12</text>
+
+  <!-- 共享指针 -->
+  <line x1="636" y1="140" x2="600" y2="258" stroke="#188038" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#zsG)"/>
+  <line x1="636" y1="172" x2="600" y2="258" stroke="#188038" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#zsG)"/>
+
+  <rect x="640" y="266" width="200" height="90" rx="6" fill="#e6f4ea" stroke="#188038"/>
+  <text x="740" y="288" text-anchor="middle" font-size="12" font-weight="bold" fill="#188038">共享同一份 sds</text>
+  <text x="740" y="308" text-anchor="middle" font-size="11" fill="#24292f">dict 的 key 与跳表节点的 ele</text>
+  <text x="740" y="324" text-anchor="middle" font-size="11" fill="#24292f">指向同一个 sds，不存两份数据</text>
+  <text x="740" y="344" text-anchor="middle" font-size="11" fill="#d93025">这是「组合拳」的成本可控的关键</text>
+
+  <!-- 底部 -->
+  <rect x="40" y="388" width="820" height="176" rx="10" fill="#f6f8fa" stroke="#d0d7de"/>
+  <text x="60" y="414" font-size="13" font-weight="bold" fill="#24292f">为什么两个都要（以及为什么不用红黑树）</text>
+
+  <rect x="60" y="424" width="250" height="128" rx="6" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="185" y="446" text-anchor="middle" font-size="12" font-weight="bold" fill="#d93025">只留跳表</text>
+  <text x="185" y="468" text-anchor="middle" font-size="11" fill="#24292f">ZSCORE 退化成 O(log N)，</text>
+  <text x="185" y="484" text-anchor="middle" font-size="11" fill="#24292f">每次查分值都要沿链表走一遍</text>
+  <text x="185" y="510" text-anchor="middle" font-size="12" font-weight="bold" fill="#d93025">只留 dict</text>
+  <text x="185" y="532" text-anchor="middle" font-size="11" fill="#24292f">范围查询每次都要全排序，</text>
+  <text x="185" y="548" text-anchor="middle" font-size="11" fill="#24292f">排行榜根本没法做</text>
+
+  <rect x="330" y="424" width="250" height="128" rx="6" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="455" y="446" text-anchor="middle" font-size="12" font-weight="bold" fill="#188038">两个都留的好处</text>
+  <text x="455" y="468" text-anchor="middle" font-size="11" fill="#24292f">ZSCORE / ZADD 判重 O(1)</text>
+  <text x="455" y="484" text-anchor="middle" font-size="11" fill="#24292f">ZRANGE / ZRANK O(log N)</text>
+  <text x="455" y="504" text-anchor="middle" font-size="11" fill="#24292f">两者只多一份指针开销，</text>
+  <text x="455" y="520" text-anchor="middle" font-size="11" fill="#24292f">member 不复制</text>
+  <text x="455" y="544" text-anchor="middle" font-size="11" fill="#57606a">小数据时整段压成 listpack，压根不走这两套</text>
+
+  <rect x="600" y="424" width="240" height="128" rx="6" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="720" y="446" text-anchor="middle" font-size="12" font-weight="bold" fill="#1a73e8">不用红黑树的三条理由</text>
+  <text x="720" y="468" text-anchor="middle" font-size="11" fill="#24292f">1. 实现简单，无旋转变色</text>
+  <text x="720" y="488" text-anchor="middle" font-size="11" fill="#24292f">2. 范围查询天然契合：</text>
+  <text x="720" y="504" text-anchor="middle" font-size="11" fill="#24292f">找到起点沿 L0 顺序走即可</text>
+  <text x="720" y="524" text-anchor="middle" font-size="11" fill="#24292f">3. 内存可调：晋升概率 p 能调</text>
+  <text x="720" y="544" text-anchor="middle" font-size="11" fill="#d93025">纠偏：「并发友好」对 Redis 不成立</text>
+</svg>

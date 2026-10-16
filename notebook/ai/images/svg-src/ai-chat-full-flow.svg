@@ -1,0 +1,118 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 700" font-family="Microsoft YaHei, PingFang SC, sans-serif">
+  <rect width="900" height="700" fill="#ffffff"/>
+  <text x="450" y="30" text-anchor="middle" font-size="19" font-weight="bold" fill="#24292f">POST /v1/chat-messages 全链路：HTTP 同步层 → 父图 → SEARCH 子图 → 落库</text>
+
+  <defs>
+    <marker id="aBlue" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1a73e8"/></marker>
+    <marker id="aGray" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#57606a"/></marker>
+    <marker id="aTeal" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#0f7b6c"/></marker>
+    <marker id="aRed" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#d93025"/></marker>
+  </defs>
+
+  <!-- HTTP 同步层 -->
+  <rect x="60" y="46" width="780" height="72" rx="10" fill="#e8f0fe" stroke="#1a73e8" stroke-width="2"/>
+  <text x="450" y="68" text-anchor="middle" font-size="14" font-weight="bold" fill="#1a73e8">① HTTP 同步层（全程零 LLM）</text>
+  <rect x="80" y="76" width="132" height="30" rx="5" fill="#ffffff" stroke="#1a73e8"/>
+  <text x="146" y="96" text-anchor="middle" font-size="11" fill="#24292f">鉴权 + 双限流</text>
+  <rect x="222" y="76" width="132" height="30" rx="5" fill="#ffffff" stroke="#1a73e8"/>
+  <text x="288" y="96" text-anchor="middle" font-size="11" fill="#24292f">SSE 握手 + ping</text>
+  <rect x="364" y="76" width="132" height="30" rx="5" fill="#ffffff" stroke="#1a73e8"/>
+  <text x="430" y="96" text-anchor="middle" font-size="11" fill="#24292f">SessionTurnLock</text>
+  <rect x="506" y="76" width="132" height="30" rx="5" fill="#ffffff" stroke="#1a73e8"/>
+  <text x="572" y="96" text-anchor="middle" font-size="11" fill="#24292f">落用户消息</text>
+  <rect x="648" y="76" width="172" height="30" rx="5" fill="#ffffff" stroke="#1a73e8"/>
+  <text x="734" y="96" text-anchor="middle" font-size="11" fill="#24292f">Langfuse 根 span</text>
+
+  <line x1="450" y1="120" x2="450" y2="146" stroke="#57606a" stroke-width="2" marker-end="url(#aGray)"/>
+
+  <!-- 父图 -->
+  <rect x="60" y="150" width="780" height="140" rx="10" fill="#f6f8fa" stroke="#57606a" stroke-width="2"/>
+  <text x="450" y="172" text-anchor="middle" font-size="14" font-weight="bold" fill="#24292f">② LangGraph4j 父图编排层</text>
+
+  <rect x="120" y="184" width="240" height="44" rx="6" fill="#ffffff" stroke="#57606a"/>
+  <text x="240" y="204" text-anchor="middle" font-size="12" font-weight="bold" fill="#24292f">RULE_CHECK（正则快筛）</text>
+  <text x="240" y="221" text-anchor="middle" font-size="11" fill="#57606a">命中注入 → 零 LLM 直接拦</text>
+
+  <line x1="360" y1="206" x2="396" y2="206" stroke="#57606a" marker-end="url(#aGray)"/>
+
+  <rect x="400" y="184" width="220" height="44" rx="6" fill="#ffffff" stroke="#57606a"/>
+  <text x="510" y="204" text-anchor="middle" font-size="12" font-weight="bold" fill="#24292f">CLASSIFY（1 次 LLM）</text>
+  <text x="510" y="221" text-anchor="middle" font-size="11" fill="#57606a">输出 意图|安全|语言</text>
+
+  <text x="648" y="200" font-size="11" fill="#d93025">BLOCKED → SAFE_REPLY</text>
+  <text x="648" y="218" font-size="11" fill="#57606a">LLM 失败 → 关键词兜底</text>
+
+  <!-- 分支标签 -->
+  <text x="270" y="258" text-anchor="middle" font-size="12" font-weight="bold" fill="#0f7b6c">SEARCH（默认，进子图）</text>
+  <text x="700" y="258" text-anchor="middle" font-size="12" font-weight="bold" fill="#57606a">其余分支走右侧通道</text>
+  <line x1="510" y1="232" x2="510" y2="252" stroke="#57606a"/>
+  <line x1="270" y1="252" x2="270" y2="266" stroke="#0f7b6c" marker-end="url(#aTeal)"/>
+  <line x1="510" y1="252" x2="700" y2="252" stroke="#57606a"/>
+  <line x1="700" y1="252" x2="700" y2="266" stroke="#57606a" marker-end="url(#aGray)"/>
+
+  <!-- SEARCH 子图 -->
+  <rect x="60" y="270" width="440" height="230" rx="10" fill="#e6f4f1" stroke="#0f7b6c" stroke-width="2"/>
+  <text x="280" y="292" text-anchor="middle" font-size="13" font-weight="bold" fill="#0f7b6c">③ SEARCH 子图（10 节点，青色）</text>
+
+  <rect x="80" y="300" width="400" height="34" rx="5" fill="#ffffff" stroke="#0f7b6c"/>
+  <text x="280" y="322" text-anchor="middle" font-size="12" fill="#24292f">ROUTER：重置瞬态 channel → LLM 判子意图</text>
+
+  <rect x="80" y="344" width="72" height="32" rx="5" fill="#ffffff" stroke="#0f7b6c"/>
+  <text x="116" y="364" text-anchor="middle" font-size="10" fill="#24292f">CONDITION</text>
+  <rect x="160" y="344" width="72" height="32" rx="5" fill="#ffffff" stroke="#0f7b6c"/>
+  <text x="196" y="364" text-anchor="middle" font-size="10" fill="#24292f">LOOKUP</text>
+  <rect x="240" y="344" width="72" height="32" rx="5" fill="#ffffff" stroke="#0f7b6c"/>
+  <text x="276" y="364" text-anchor="middle" font-size="10" fill="#24292f">RANKING</text>
+  <rect x="320" y="344" width="72" height="32" rx="5" fill="#ffffff" stroke="#0f7b6c"/>
+  <text x="356" y="364" text-anchor="middle" font-size="10" fill="#24292f">ANALYZE</text>
+  <rect x="400" y="344" width="80" height="32" rx="5" fill="#ffffff" stroke="#0f7b6c"/>
+  <text x="440" y="364" text-anchor="middle" font-size="10" fill="#24292f">GENERAL</text>
+  <text x="280" y="392" text-anchor="middle" font-size="10" fill="#57606a">有界 function-call 上限：3 / 5 / 3 / 5 轮，GENERAL 零 LLM</text>
+
+  <rect x="80" y="400" width="200" height="40" rx="6" fill="#c9ece4" stroke="#0f7b6c" stroke-width="2"/>
+  <text x="180" y="418" text-anchor="middle" font-size="12" font-weight="bold" fill="#0f7b6c">COMPOSE（唯一流式）</text>
+  <text x="180" y="433" text-anchor="middle" font-size="10" fill="#24292f">静默生成引导问题 → 流式吐字</text>
+
+  <rect x="292" y="400" width="188" height="40" rx="6" fill="#ffffff" stroke="#0f7b6c"/>
+  <text x="386" y="418" text-anchor="middle" font-size="11" fill="#24292f">OEM_BRAND_CARD</text>
+  <text x="386" y="433" text-anchor="middle" font-size="11" fill="#24292f">+ LEAD_CAPTURE</text>
+
+  <rect x="80" y="452" width="400" height="34" rx="5" fill="#ffffff" stroke="#0f7b6c"/>
+  <text x="280" y="474" text-anchor="middle" font-size="12" fill="#24292f">OUTPUT：零 LLM 序列化，SSE 推 [[Type::JSON]] 卡片</text>
+
+  <!-- 右侧通道 -->
+  <rect x="540" y="270" width="300" height="230" rx="10" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="690" y="292" text-anchor="middle" font-size="13" font-weight="bold" fill="#24292f">非 SEARCH 分支</text>
+
+  <rect x="560" y="304" width="260" height="56" rx="6" fill="#fef7e0" stroke="#b06000"/>
+  <text x="690" y="324" text-anchor="middle" font-size="12" font-weight="bold" fill="#b06000">FINANCE（第二个流式点）</text>
+  <text x="690" y="342" text-anchor="middle" font-size="10" fill="#24292f">ReAct 自由循环，6 个金融工具 Bean</text>
+  <text x="690" y="356" text-anchor="middle" font-size="10" fill="#57606a">MAX_ITERATIONS = 50 看门狗</text>
+
+  <rect x="560" y="372" width="260" height="46" rx="6" fill="#ffffff" stroke="#57606a"/>
+  <text x="690" y="392" text-anchor="middle" font-size="12" font-weight="bold" fill="#24292f">LEAD（留资）</text>
+  <text x="690" y="410" text-anchor="middle" font-size="10" fill="#57606a">有界 FC ≤5 轮判手机号 → submitLeadPhone</text>
+
+  <rect x="560" y="430" width="260" height="46" rx="6" fill="#fce8e6" stroke="#d93025"/>
+  <text x="690" y="450" text-anchor="middle" font-size="12" font-weight="bold" fill="#d93025">SAFE_REPLY（零 LLM）</text>
+  <text x="690" y="468" text-anchor="middle" font-size="10" fill="#57606a">固定中/西拒绝话术，SSE 直推后落库</text>
+
+  <!-- 汇流 -->
+  <line x1="280" y1="490" x2="280" y2="530" stroke="#0f7b6c" stroke-width="2" marker-end="url(#aTeal)"/>
+  <line x1="690" y1="480" x2="690" y2="530" stroke="#57606a" stroke-width="2"/>
+  <line x1="690" y1="530" x2="470" y2="530" stroke="#57606a" stroke-width="2" marker-end="url(#aGray)"/>
+
+  <rect x="280" y="540" width="410" height="52" rx="8" fill="#e8f0fe" stroke="#1a73e8" stroke-width="2"/>
+  <text x="485" y="562" text-anchor="middle" font-size="13" font-weight="bold" fill="#1a73e8">④ PERSISTENCE（父图收尾）</text>
+  <text x="485" y="580" text-anchor="middle" font-size="11" fill="#24292f">session 更新 + 助手消息（含 token usage）+ turn CAS 完成</text>
+
+  <line x1="485" y1="594" x2="485" y2="622" stroke="#1a73e8" marker-end="url(#aBlue)"/>
+
+  <rect x="280" y="626" width="410" height="46" rx="8" fill="#f6f8fa" stroke="#57606a"/>
+  <text x="485" y="646" text-anchor="middle" font-size="12" font-weight="bold" fill="#24292f">⑤ END / finally</text>
+  <text x="485" y="662" text-anchor="middle" font-size="11" fill="#57606a">message_end + 关 SSE + 清理 ThreadLocal</text>
+
+  <!-- 底部注记 -->
+  <rect x="60" y="676" width="780" height="0" fill="none"/>
+  <text x="60" y="660" font-size="11" fill="#d93025">整轮只有 2 个流式点：COMPOSE 与 FINANCE</text>
+</svg>

@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560" font-family="Microsoft YaHei, PingFang SC, sans-serif">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#57606a"/>
+    </marker>
+  </defs>
+  <rect width="900" height="560" fill="#ffffff"/>
+  <text x="450" y="36" text-anchor="middle" font-size="22" font-weight="bold" fill="#24292f">最左前缀原理：联合索引 (a,b,c) 在 B+ 树叶子层的物理排列</text>
+  <text x="450" y="60" text-anchor="middle" font-size="13" fill="#57606a">排序规则：先按 a 全局有序，a 相同时段内按 b 有序，a、b 都相同才按 c 有序</text>
+
+  <!-- 叶子节点行：每个节点显示 (a,b,c) -->
+  <g font-size="13" fill="#24292f" text-anchor="middle">
+    <!-- row values: (1,1,5) (1,2,9) (1,3,2) | (2,1,7) (2,2,1) | (3,1,4) (3,4,8) -->
+    <g>
+      <rect x="60" y="90" width="90" height="44" rx="6" fill="#e8f0fe" stroke="#1a73e8"/>
+      <text x="105" y="117" font-weight="bold">(1,1,5)</text>
+      <rect x="160" y="90" width="90" height="44" rx="6" fill="#e8f0fe" stroke="#1a73e8"/>
+      <text x="205" y="117" font-weight="bold">(1,2,9)</text>
+      <rect x="260" y="90" width="90" height="44" rx="6" fill="#e8f0fe" stroke="#1a73e8"/>
+      <text x="305" y="117" font-weight="bold">(1,3,2)</text>
+
+      <rect x="380" y="90" width="90" height="44" rx="6" fill="#e6f4ea" stroke="#188038"/>
+      <text x="425" y="117" font-weight="bold">(2,1,7)</text>
+      <rect x="480" y="90" width="90" height="44" rx="6" fill="#e6f4ea" stroke="#188038"/>
+      <text x="525" y="117" font-weight="bold">(2,2,1)</text>
+
+      <rect x="600" y="90" width="90" height="44" rx="6" fill="#fef7e0" stroke="#b06000"/>
+      <text x="645" y="117" font-weight="bold">(3,1,4)</text>
+      <rect x="700" y="90" width="90" height="44" rx="6" fill="#fef7e0" stroke="#b06000"/>
+      <text x="745" y="117" font-weight="bold">(3,4,8)</text>
+    </g>
+    <!-- 链表指针 -->
+    <g stroke="#57606a" stroke-width="1.5">
+      <line x1="150" y1="112" x2="158" y2="112" marker-end="url(#arr)"/>
+      <line x1="250" y1="112" x2="258" y2="112" marker-end="url(#arr)"/>
+      <line x1="350" y1="112" x2="378" y2="112" marker-end="url(#arr)"/>
+      <line x1="470" y1="112" x2="478" y2="112" marker-end="url(#arr)"/>
+      <line x1="570" y1="112" x2="598" y2="112" marker-end="url(#arr)"/>
+      <line x1="690" y1="112" x2="698" y2="112" marker-end="url(#arr)"/>
+    </g>
+  </g>
+
+  <!-- 有序性标注 -->
+  <g font-size="13">
+    <text x="105" y="162" text-anchor="middle" fill="#1a73e8">a=1</text>
+    <text x="425" y="162" text-anchor="middle" fill="#188038">a=2</text>
+    <text x="645" y="162" text-anchor="middle" fill="#b06000">a=3</text>
+    <path d="M60,175 H350" stroke="#1a73e8" stroke-width="1.5" fill="none"/>
+    <path d="M380,175 H570" stroke="#188038" stroke-width="1.5" fill="none"/>
+    <path d="M600,175 H790" stroke="#b06000" stroke-width="1.5" fill="none"/>
+    <text x="205" y="194" text-anchor="middle" fill="#1a73e8">段内 b 有序：1 → 2 → 3</text>
+    <text x="425" y="194" text-anchor="middle" fill="#188038">段内 b 有序：1 → 2</text>
+    <text x="645" y="194" text-anchor="middle" fill="#b06000">段内 b 有序：1 → 4</text>
+    <text x="450" y="220" text-anchor="middle" font-weight="bold" fill="#24292f">全局看 b 序列 = 1,2,3,1,2,1,4 —— 跨段无序，跳过 a 无法二分定位 b</text>
+  </g>
+
+  <!-- 命中/失效 对照 -->
+  <g font-size="14">
+    <text x="60" y="262" font-weight="bold" fill="#188038">✔ 能命中（利用有序性定位）</text>
+    <text x="500" y="262" font-weight="bold" fill="#d93025">✘ 不能命中（有序性被破坏）</text>
+
+    <g fill="#ffffff" stroke-width="1.5">
+      <rect x="60" y="278" width="400" height="52" rx="8" stroke="#188038"/>
+      <rect x="60" y="340" width="400" height="52" rx="8" stroke="#188038"/>
+      <rect x="60" y="402" width="400" height="52" rx="8" stroke="#188038"/>
+      <rect x="500" y="278" width="340" height="52" rx="8" stroke="#d93025"/>
+      <rect x="500" y="340" width="340" height="52" rx="8" stroke="#d93025"/>
+      <rect x="500" y="402" width="340" height="52" rx="8" stroke="#d93025"/>
+    </g>
+    <g fill="#24292f">
+      <text x="76" y="300" font-family="Consolas, monospace">where a = 1</text>
+      <text x="76" y="320" font-size="12" fill="#57606a">a 全局有序 → 直接二分定位到 a=1 的段</text>
+
+      <text x="76" y="362" font-family="Consolas, monospace">where a = 1 and b = 2</text>
+      <text x="76" y="382" font-size="12" fill="#57606a">锁定段后段内 b 有序 → 继续精确定位</text>
+
+      <text x="76" y="424" font-family="Consolas, monospace">where a = 1 and b = 2 and c = 5</text>
+      <text x="76" y="444" font-size="12" fill="#57606a">三列逐层递进，定位到唯一条目</text>
+
+      <text x="516" y="300" font-family="Consolas, monospace">where b = 2</text>
+      <text x="516" y="320" font-size="12" fill="#57606a">跳过 a：b 跨段无序，只能全索引扫描</text>
+
+      <text x="516" y="362" font-family="Consolas, monospace">where a &gt; 1 and b = 2</text>
+      <text x="516" y="382" font-size="12" fill="#57606a">范围后 b 跨段无序：b 只能 ICP 过滤</text>
+
+      <text x="516" y="424" font-family="Consolas, monospace">where b = 2 and c = 5</text>
+      <text x="516" y="444" font-size="12" fill="#57606a">8.0.13+ a 基数低时可跳跃扫描兜底</text>
+    </g>
+  </g>
+
+  <!-- 底部结论 -->
+  <rect x="60" y="478" width="780" height="56" rx="8" fill="#f6f8fa" stroke="#d0d7de"/>
+  <text x="450" y="501" text-anchor="middle" font-size="14" font-weight="bold" fill="#24292f">一句话标准：能否利用 B+ 树的有序性缩小扫描范围</text>
+  <text x="450" y="522" text-anchor="middle" font-size="12" fill="#57606a">定位（缩小范围）≠ 过滤（ICP 在索引上先筛再回表）；失效与「优化器主动放弃」要区分</text>
+</svg>

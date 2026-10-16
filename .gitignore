@@ -1,0 +1,7 @@
+# 临时预览产物，不入库
+_image-preview-check.html
+
+node_modules/
+.DS_Store
+Thumbs.db
+*.log

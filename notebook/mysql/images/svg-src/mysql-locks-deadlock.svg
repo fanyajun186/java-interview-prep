@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" font-family="Microsoft YaHei, PingFang SC, sans-serif">
+  <rect width="900" height="520" fill="#ffffff"/>
+  <text x="450" y="36" text-anchor="middle" font-size="20" font-weight="bold" fill="#24292f">两类高频死锁：循环等待环 与 RR 间隙锁 + 插入意向锁</text>
+
+  <defs>
+    <marker id="aB" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1a73e8"/></marker>
+    <marker id="aR" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#d93025"/></marker>
+    <marker id="aG" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#188038"/></marker>
+    <marker id="aO" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#b06000"/></marker>
+  </defs>
+
+  <!-- 左半：类型一 -->
+  <rect x="40" y="60" width="390" height="420" rx="10" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="235" y="92" text-anchor="middle" font-size="16" font-weight="bold" fill="#24292f">类型一：加锁顺序相反</text>
+  <text x="235" y="116" text-anchor="middle" font-size="13" fill="#57606a">A 锁 id=1 要 id=2；B 锁 id=2 要 id=1</text>
+
+  <!-- 事务节点 -->
+  <rect x="90" y="150" width="120" height="50" rx="8" fill="#1a73e8"/>
+  <text x="150" y="180" text-anchor="middle" font-size="15" font-weight="bold" fill="#ffffff">事务 A</text>
+  <rect x="260" y="150" width="120" height="50" rx="8" fill="#188038"/>
+  <text x="320" y="180" text-anchor="middle" font-size="15" font-weight="bold" fill="#ffffff">事务 B</text>
+
+  <!-- 资源节点 -->
+  <rect x="90" y="290" width="120" height="50" rx="8" fill="#ffffff" stroke="#1a73e8" stroke-width="2"/>
+  <text x="150" y="321" text-anchor="middle" font-size="14" font-weight="bold" fill="#1a73e8">行 id = 1</text>
+  <rect x="260" y="290" width="120" height="50" rx="8" fill="#ffffff" stroke="#188038" stroke-width="2"/>
+  <text x="320" y="321" text-anchor="middle" font-size="14" font-weight="bold" fill="#188038">行 id = 2</text>
+
+  <!-- 持有边（实线） -->
+  <line x1="150" y1="200" x2="150" y2="282" stroke="#1a73e8" stroke-width="2.5" marker-end="url(#aB)"/>
+  <line x1="320" y1="200" x2="320" y2="282" stroke="#188038" stroke-width="2.5" marker-end="url(#aG)"/>
+  <!-- 等待边（虚线红色） -->
+  <line x1="380" y1="200" x2="195" y2="292" stroke="#d93025" stroke-width="2.5" stroke-dasharray="7,5" marker-end="url(#aR)"/>
+  <line x1="90" y1="200" x2="275" y2="292" stroke="#d93025" stroke-width="2.5" stroke-dasharray="7,5" marker-end="url(#aR)"/>
+
+  <g font-size="12.5" fill="#24292f">
+    <text x="235" y="376" text-anchor="middle" fill="#1a73e8">实线 = 持有锁</text>
+    <text x="235" y="398" text-anchor="middle" fill="#d93025">虚线 = 等待锁（A 等 id=2，B 等 id=1）</text>
+    <text x="235" y="424" text-anchor="middle" font-weight="bold" fill="#d93025">A → id=2 → B → id=1 → A 成环 = 死锁</text>
+    <text x="235" y="452" text-anchor="middle" fill="#57606a">治理：批量操作按主键排序，统一加锁顺序</text>
+  </g>
+
+  <!-- 右半：类型二 -->
+  <rect x="470" y="60" width="390" height="420" rx="10" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="665" y="92" text-anchor="middle" font-size="16" font-weight="bold" fill="#24292f">类型二：gap lock + 插入意向锁（RR）</text>
+  <text x="665" y="116" text-anchor="middle" font-size="13" fill="#57606a">间隙 (10,15)，两个事务先后读不命中再插入</text>
+
+  <!-- 时序四步 -->
+  <g font-size="13.5" fill="#24292f">
+    <circle cx="510" cy="158" r="14" fill="#1a73e8"/><text x="510" y="163" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">1</text>
+    <text x="534" y="163">T1：WHERE c=12 FOR UPDATE 不命中 → 持 gap lock (10,15)</text>
+
+    <circle cx="510" cy="200" r="14" fill="#188038"/><text x="510" y="205" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">2</text>
+    <text x="534" y="205">T2：WHERE c=13 FOR UPDATE 不命中 → 也持 gap lock (10,15)</text>
+    <text x="534" y="226" font-size="12.5" fill="#188038">gap lock 之间互相兼容，两边都加锁成功（只防插入，不防加锁）</text>
+
+    <circle cx="510" cy="262" r="14" fill="#b06000"/><text x="510" y="267" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">3</text>
+    <text x="534" y="267">T1：INSERT c=12 → 需插入意向锁，与 T2 的 gap lock 冲突，等待</text>
+
+    <circle cx="510" cy="304" r="14" fill="#d93025"/><text x="510" y="309" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">4</text>
+    <text x="534" y="309">T2：INSERT c=13 → 同样与 T1 的 gap lock 冲突，互相等待</text>
+  </g>
+
+  <!-- 冲突矩阵小图 -->
+  <rect x="500" y="336" width="330" height="86" rx="8" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="665" y="358" text-anchor="middle" font-size="13" font-weight="bold" fill="#24292f">冲突矩阵（同间隙）</text>
+  <text x="665" y="380" text-anchor="middle" font-size="12.5" fill="#188038">gap ↔ gap 兼容 ｜ 插入意向 ↔ 插入意向 兼容</text>
+  <text x="665" y="402" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#d93025">插入意向 ↔ 对方 gap lock 冲突 → 环路成立，死锁</text>
+
+  <text x="665" y="452" text-anchor="middle" font-size="12.5" fill="#57606a">治理：走索引缩小间隙；或容忍用 RC（无 gap lock）</text>
+  <text x="665" y="474" text-anchor="middle" font-size="12.5" fill="#57606a">检测：wait-for graph DFS 成环，回滚 undo 量小的事务</text>
+</svg>

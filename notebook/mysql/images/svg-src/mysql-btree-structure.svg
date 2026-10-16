@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560" font-family="Microsoft YaHei, PingFang SC, sans-serif">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#57606a"/>
+    </marker>
+    <marker id="arrBlue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1a73e8"/>
+    </marker>
+    <marker id="arrGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#188038"/>
+    </marker>
+  </defs>
+
+  <rect width="900" height="560" fill="#ffffff"/>
+  <text x="450" y="36" text-anchor="middle" font-size="22" font-weight="bold" fill="#24292f">InnoDB 三层 B+ 树结构（对比 B 树）</text>
+
+  <!-- ====== B+ 树 ====== -->
+  <text x="280" y="70" text-anchor="middle" font-size="16" font-weight="bold" fill="#1a73e8">B+ 树：非叶节点只存「键 + 页号」</text>
+
+  <!-- 根页 -->
+  <rect x="200" y="86" width="160" height="46" rx="6" fill="#e8f0fe" stroke="#1a73e8" stroke-width="1.5"/>
+  <text x="280" y="106" text-anchor="middle" font-size="13" font-weight="bold" fill="#1a73e8">根页 (16KB)</text>
+  <text x="280" y="123" text-anchor="middle" font-size="12" fill="#24292f">键 8B + 页号 6B = 14B/项</text>
+
+  <!-- 中间页 -->
+  <rect x="120" y="170" width="140" height="46" rx="6" fill="#e8f0fe" stroke="#1a73e8" stroke-width="1.5"/>
+  <text x="190" y="190" text-anchor="middle" font-size="13" font-weight="bold" fill="#1a73e8">中间页</text>
+  <text x="190" y="207" text-anchor="middle" font-size="12" fill="#24292f">只存键+页号</text>
+  <rect x="300" y="170" width="140" height="46" rx="6" fill="#e8f0fe" stroke="#1a73e8" stroke-width="1.5"/>
+  <text x="370" y="190" text-anchor="middle" font-size="13" font-weight="bold" fill="#1a73e8">中间页</text>
+  <text x="370" y="207" text-anchor="middle" font-size="12" fill="#24292f">扇出 ≈ 1170</text>
+
+  <line x1="255" y1="132" x2="195" y2="168" stroke="#57606a" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="305" y1="132" x2="365" y2="168" stroke="#57606a" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- 叶子页 -->
+  <g>
+    <rect x="40" y="266" width="130" height="66" rx="6" fill="#e6f4ea" stroke="#188038" stroke-width="1.5"/>
+    <text x="105" y="288" text-anchor="middle" font-size="13" font-weight="bold" fill="#188038">叶子页</text>
+    <text x="105" y="306" text-anchor="middle" font-size="11" fill="#24292f">完整数据行</text>
+    <text x="105" y="322" text-anchor="middle" font-size="11" fill="#57606a">row1 row2 …</text>
+
+    <rect x="200" y="266" width="130" height="66" rx="6" fill="#e6f4ea" stroke="#188038" stroke-width="1.5"/>
+    <text x="265" y="288" text-anchor="middle" font-size="13" font-weight="bold" fill="#188038">叶子页</text>
+    <text x="265" y="306" text-anchor="middle" font-size="11" fill="#24292f">完整数据行</text>
+    <text x="265" y="322" text-anchor="middle" font-size="11" fill="#57606a">每页约 16 行</text>
+
+    <rect x="360" y="266" width="130" height="66" rx="6" fill="#e6f4ea" stroke="#188038" stroke-width="1.5"/>
+    <text x="425" y="288" text-anchor="middle" font-size="13" font-weight="bold" fill="#188038">叶子页</text>
+    <text x="425" y="306" text-anchor="middle" font-size="11" fill="#24292f">完整数据行</text>
+    <text x="425" y="322" text-anchor="middle" font-size="11" fill="#57606a">按主键有序</text>
+  </g>
+
+  <!-- 叶子链表双向箭头 -->
+  <line x1="170" y1="292" x2="200" y2="292" stroke="#188038" stroke-width="1.5" marker-start="url(#arrGreen)" marker-end="url(#arrGreen)"/>
+  <line x1="330" y1="292" x2="360" y2="292" stroke="#188038" stroke-width="1.5" marker-start="url(#arrGreen)" marker-end="url(#arrGreen)"/>
+  <line x1="490" y1="292" x2="516" y2="292" stroke="#188038" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrGreen)"/>
+  <text x="505" y="284" text-anchor="middle" font-size="11" fill="#188038">…</text>
+
+  <line x1="175" y1="216" x2="110" y2="264" stroke="#57606a" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="195" y1="216" x2="255" y2="264" stroke="#57606a" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="370" y1="216" x2="415" y2="264" stroke="#57606a" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <text x="280" y="360" text-anchor="middle" font-size="12" fill="#188038">← 叶子层双向链表：范围查询一次下探 + 顺序扫描 →</text>
+
+  <text x="60" y="400" font-size="12" fill="#24292f">查询路径：根 → 中间 → 叶，IO 次数恒等于层高（3）</text>
+  <text x="60" y="420" font-size="12" fill="#57606a">根页 / 中间页常驻 Buffer Pool，等值查询实际仅需约 1 次磁盘 IO</text>
+
+  <!-- ====== B 树对比 ====== -->
+  <text x="700" y="70" text-anchor="middle" font-size="16" font-weight="bold" fill="#d93025">B 树：非叶节点也存数据行</text>
+
+  <rect x="630" y="86" width="140" height="52" rx="6" fill="#fce8e6" stroke="#d93025" stroke-width="1.5"/>
+  <text x="700" y="106" text-anchor="middle" font-size="12" font-weight="bold" fill="#d93025">根节点</text>
+  <text x="700" y="124" text-anchor="middle" font-size="11" fill="#24292f">键 + 数据行（占满页）</text>
+
+  <rect x="560" y="176" width="120" height="52" rx="6" fill="#fce8e6" stroke="#d93025" stroke-width="1.5"/>
+  <text x="620" y="196" text-anchor="middle" font-size="12" font-weight="bold" fill="#d93025">中间节点</text>
+  <text x="620" y="214" text-anchor="middle" font-size="11" fill="#24292f">键 + 数据行</text>
+  <rect x="720" y="176" width="120" height="52" rx="6" fill="#fce8e6" stroke="#d93025" stroke-width="1.5"/>
+  <text x="780" y="196" text-anchor="middle" font-size="12" font-weight="bold" fill="#d93025">中间节点</text>
+  <text x="780" y="214" text-anchor="middle" font-size="11" fill="#24292f">扇出小</text>
+
+  <rect x="560" y="266" width="120" height="52" rx="6" fill="#fce8e6" stroke="#d93025" stroke-width="1.5"/>
+  <text x="620" y="288" text-anchor="middle" font-size="12" font-weight="bold" fill="#d93025">叶子节点</text>
+  <text x="620" y="306" text-anchor="middle" font-size="11" fill="#24292f">键 + 数据行</text>
+  <rect x="720" y="266" width="120" height="52" rx="6" fill="#fce8e6" stroke="#d93025" stroke-width="1.5"/>
+  <text x="780" y="288" text-anchor="middle" font-size="12" font-weight="bold" fill="#d93025">叶子节点</text>
+  <text x="780" y="306" text-anchor="middle" font-size="11" fill="#24292f">无链表</text>
+
+  <line x1="680" y1="138" x2="630" y2="174" stroke="#57606a" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="720" y1="138" x2="770" y2="174" stroke="#57606a" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="620" y1="228" x2="620" y2="264" stroke="#57606a" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="780" y1="228" x2="780" y2="264" stroke="#57606a" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <text x="560" y="360" font-size="12" fill="#d93025">数据行挤占非叶页 → 扇出小、层高更高</text>
+  <text x="560" y="380" font-size="12" fill="#d93025">范围查询需中序回溯 → 大量随机 IO</text>
+  <text x="560" y="400" font-size="12" fill="#57606a">等值查询路径不等长，性能不稳定</text>
+
+  <!-- 底部结论 -->
+  <rect x="60" y="452" width="780" height="72" rx="8" fill="#f6f8fa" stroke="#d0d7de"/>
+  <text x="450" y="480" text-anchor="middle" font-size="14" font-weight="bold" fill="#24292f">核心结论：数据库索引的目标是「最小化随机磁盘 IO 次数」</text>
+  <text x="450" y="505" text-anchor="middle" font-size="12" fill="#57606a">B+ 树用「数据全部下压叶子层」换来 ① 非叶高扇出（层高低） ② 叶子链表顺序扫（IO 局部性） ③ 等长路径（性能稳定）</text>
+</svg>

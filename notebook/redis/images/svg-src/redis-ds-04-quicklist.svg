@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500" font-family="Microsoft YaHei, PingFang SC, sans-serif">
+  <rect width="900" height="500" fill="#ffffff"/>
+  <text x="450" y="32" text-anchor="middle" font-size="20" font-weight="bold" fill="#24292f">quicklist：双向链表 + 每个节点挂一个 listpack</text>
+
+  <defs>
+    <marker id="qB" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1a73e8"/></marker>
+  </defs>
+
+  <!-- 三种方案对比 -->
+  <text x="60" y="64" font-size="14" font-weight="bold" fill="#24292f">① 为什么是折中方案</text>
+
+  <rect x="60" y="74" width="250" height="70" rx="8" fill="#fce8e6" stroke="#d93025"/>
+  <text x="185" y="98" text-anchor="middle" font-size="13" font-weight="bold" fill="#d93025">纯双向链表</text>
+  <text x="185" y="118" text-anchor="middle" font-size="11" fill="#24292f">每元素 2 个指针 = 16 字节</text>
+  <text x="185" y="134" text-anchor="middle" font-size="11" fill="#24292f">内存碎片多、缓存不友好</text>
+
+  <rect x="325" y="74" width="250" height="70" rx="8" fill="#fef7e0" stroke="#b06000"/>
+  <text x="450" y="98" text-anchor="middle" font-size="13" font-weight="bold" fill="#b06000">纯 listpack</text>
+  <text x="450" y="118" text-anchor="middle" font-size="11" fill="#24292f">内存紧凑，但中间插入要 memmove</text>
+  <text x="450" y="134" text-anchor="middle" font-size="11" fill="#24292f">O(n)，大列表不可接受</text>
+
+  <rect x="590" y="74" width="290" height="70" rx="8" fill="#e6f4ea" stroke="#188038"/>
+  <text x="735" y="98" text-anchor="middle" font-size="13" font-weight="bold" fill="#188038">quicklist = 两者结合</text>
+  <text x="735" y="118" text-anchor="middle" font-size="11" fill="#24292f">链表保证两端 O(1) 操作</text>
+  <text x="735" y="134" text-anchor="middle" font-size="11" fill="#24292f">节点内 listpack 保证内存紧凑</text>
+
+  <!-- 结构图 -->
+  <text x="60" y="176" font-size="14" font-weight="bold" fill="#24292f">② 结构长什么样</text>
+
+  <rect x="60" y="190" width="820" height="40" rx="8" fill="#e8f0fe" stroke="#1a73e8"/>
+  <text x="470" y="215" text-anchor="middle" font-size="13" font-weight="bold" fill="#1a73e8">quicklist { head / tail / count（总元素数）/ len（节点数）/ fill / compress }</text>
+
+  <!-- 节点 1 -->
+  <rect x="70" y="248" width="170" height="90" rx="8" fill="#ffffff" stroke="#1a73e8" stroke-width="2"/>
+  <text x="155" y="270" text-anchor="middle" font-size="11" font-weight="bold" fill="#1a73e8">quicklistNode</text>
+  <rect x="82" y="278" width="146" height="26" fill="#e6f4ea" stroke="#188038"/>
+  <text x="155" y="296" text-anchor="middle" font-size="11" fill="#188038">listpack（紧凑）</text>
+  <text x="155" y="322" text-anchor="middle" font-size="10" fill="#57606a">prev / next / sz / count</text>
+
+  <line x1="244" y1="293" x2="296" y2="293" stroke="#1a73e8" marker-end="url(#qB)"/>
+  <line x1="296" y1="293" x2="244" y2="293" stroke="#1a73e8" marker-end="url(#qB)"/>
+
+  <!-- 节点 2 -->
+  <rect x="300" y="248" width="170" height="90" rx="8" fill="#ffffff" stroke="#1a73e8"/>
+  <text x="385" y="270" text-anchor="middle" font-size="11" font-weight="bold" fill="#1a73e8">quicklistNode</text>
+  <rect x="312" y="278" width="146" height="26" fill="#e6f4ea" stroke="#188038"/>
+  <text x="385" y="296" text-anchor="middle" font-size="11" fill="#188038">listpack（紧凑）</text>
+  <text x="385" y="322" text-anchor="middle" font-size="10" fill="#57606a">可 LZF 压缩（中间节点）</text>
+
+  <line x1="474" y1="293" x2="526" y2="293" stroke="#1a73e8" marker-end="url(#qB)"/>
+  <line x1="526" y1="293" x2="474" y2="293" stroke="#1a73e8" marker-end="url(#qB)"/>
+
+  <!-- 节点 3 -->
+  <rect x="530" y="248" width="170" height="90" rx="8" fill="#ffffff" stroke="#1a73e8"/>
+  <text x="615" y="270" text-anchor="middle" font-size="11" font-weight="bold" fill="#1a73e8">quicklistNode</text>
+  <rect x="542" y="278" width="146" height="26" fill="#e6f4ea" stroke="#188038"/>
+  <text x="615" y="296" text-anchor="middle" font-size="11" fill="#188038">listpack（紧凑）</text>
+  <text x="615" y="322" text-anchor="middle" font-size="10" fill="#57606a">container 可为 PLAIN</text>
+
+  <line x1="704" y1="293" x2="756" y2="293" stroke="#1a73e8" marker-end="url(#qB)"/>
+  <line x1="756" y1="293" x2="704" y2="293" stroke="#1a73e8" marker-end="url(#qB)"/>
+
+  <!-- 节点 4 -->
+  <rect x="760" y="248" width="110" height="90" rx="8" fill="#ffffff" stroke="#1a73e8"/>
+  <text x="815" y="270" text-anchor="middle" font-size="11" font-weight="bold" fill="#1a73e8">quicklistNode</text>
+  <rect x="772" y="278" width="86" height="26" fill="#e6f4ea" stroke="#188038"/>
+  <text x="815" y="296" text-anchor="middle" font-size="11" fill="#188038">listpack</text>
+  <text x="815" y="322" text-anchor="middle" font-size="10" fill="#57606a">tail</text>
+
+  <!-- 配置 -->
+  <rect x="60" y="354" width="820" height="126" rx="8" fill="#f6f8fa" stroke="#d0d7de"/>
+  <text x="76" y="378" font-size="13" font-weight="bold" fill="#24292f">③ 两个关键配置</text>
+
+  <rect x="76" y="388" width="390" height="82" rx="6" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="92" y="410" font-size="12" font-weight="bold" fill="#24292f">list-max-listpack-size（单节点上限）</text>
+  <text x="92" y="430" font-size="11" fill="#24292f">正数 = 单节点元素个数，默认 128</text>
+  <text x="92" y="448" font-size="11" fill="#24292f">负数 = 按字节：-1=4KB　-2=8KB　-3=16KB</text>
+  <text x="92" y="466" font-size="11" fill="#57606a">-4=32KB　-5=64KB（默认 -2 即 8KB）</text>
+
+  <rect x="486" y="388" width="378" height="82" rx="6" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="502" y="410" font-size="12" font-weight="bold" fill="#24292f">list-compress-depth（两端不压缩的节点数）</text>
+  <text x="502" y="430" font-size="11" fill="#24292f">默认 0 = 全部不压缩</text>
+  <text x="502" y="448" font-size="11" fill="#24292f">设 N：首尾各 N 个节点不压缩，中间节点 LZF 压缩</text>
+  <text x="502" y="466" font-size="11" fill="#d93025">随机访问到压缩节点要先解压，有 CPU 代价</text>
+</svg>
