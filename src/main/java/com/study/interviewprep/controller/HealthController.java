@@ -1,4 +1,4 @@
-package com.study.interviewprep.web;
+package com.study.interviewprep.controller;
 
 import java.time.Instant;
 import java.util.Map;
