@@ -1,4 +1,5 @@
 > 2026-10-14 成稿，Java 底层与并发主题
+> 2026-10-16 补 §2.6「怎么自己验证这一章」（javap -v 看 ACC_VOLATILE、PrintAssembly、jcstress）
 
 # volatile：可见性原理、MESI 协议与内存屏障
 
@@ -150,7 +151,7 @@ stateDiagram-v2
 
 **这是本文件最重要的一问。**
 
-答案是：**MESI 保证的是「最终」一致性，而不是「立即」一致性；而且它只解决缓存行层面的数据一致，解决不了指令重排序。**
+答案是：<span style="color:red">**MESI 保证的是「最终」一致性，而不是「立即」一致性；而且它只解决缓存行层面的数据一致，解决不了指令重排序。**</span>这两个短板正是 volatile 存在的理由。
 
 具体原因是 CPU 为了性能引入的两个**异步队列**：
 
@@ -195,6 +196,67 @@ Core B 收到 Invalidate 消息后，如果立刻去失效缓存行会打断自�
 
 > **面试口径（高分版）**："MESI 和 volatile 不是同一层的东西。MESI 是缓存行级别的协议，保证多核看到的同一地址数据不会永久分叉；但出于性能考虑，CPU 有 Store Buffer 和 Invalidate Queue 两个异步结构，写可以先躺在 Store Buffer 里不刷出，收到的失效消息也可以先排进队列不处理，于是存在短暂的旧值可见窗口。volatile 生成的带 lock 前缀指令或 mfence 就是强制排干这两个缓冲（写屏障 store buffer 刷出、读屏障 invalidate queue 处理完），外加禁止编译器和 CPU 的重排序。所以 MESI 不替代 volatile，volatile 也不重复实现 MESI —— volatile 是站在 MESI 之上补上'及时性'和'顺序性'这两块短板。"
 
+### 2.6 怎么自己验证这一章
+
+前面说"字节码看不出差异""汇编才看得到"，具体命令如下，都可以本机直接跑。
+
+**① 看字节码层面只多了一个标志位**（这一步就能自己证实 2.1 的结论）：
+
+```bash
+javac VolatileDemo.java
+javap -v -p VolatileDemo.class | grep -A 3 'Flag;'
+```
+
+> `-p` 不能省——**javap 默认不显示私有成员**，而字段通常是 private，不加就什么都看不到。
+
+输出里 volatile 字段的 `flags` 多出 `ACC_VOLATILE`（实测输出）：
+
+```
+  private volatile boolean volatileFlag;
+    descriptor: Z
+    flags: ACC_PRIVATE, ACC_VOLATILE      <-- 多这一个
+
+  private boolean normalFlag;
+    descriptor: Z
+    flags: ACC_PRIVATE
+```
+
+**关键点**：`read()` 方法的 `Code` 段里读取 `volatileFlag` 用的就是普通 `getfield` 指令——**和非 volatile 字段一模一样**，字节码里看不出任何屏障痕迹。
+
+**② 对比两者生成的机器码**（要看 `lock` 前缀必须上这一层）：
+
+```bash
+# 需要 hsdis 反汇编插件，放到 $JAVA_HOME/jre/lib/server/ 下
+java -XX:+UnlockDiagnosticVMOptions -XX:+PrintAssembly -Xcomp VolatileDemo 2>&1 | grep -B 2 -A 2 'lock'
+```
+
+volatile 写的后面会出现 `lock addl $0x0,(%rsp)`（或 `lock cmpxchg` / `mfence`）；**volatile 读在 x86 上通常什么额外指令都没有**——这正是 2.3 说的"TSO 内存模型已足够强"。
+
+> ⚠️ `-XX:+PrintAssembly` 必须额外下载 **hsdis** 动态库（JDK 不自带，因为反汇编器是第三方组件），放到 `$JAVA_HOME/jre/lib/server/` 或指定 `-XX:+PrintAssembly` 配合 `hsdis-amd64.dll`/`.so`。**嫌麻烦就跳过这步**——上面 `javap -v` 那条命令已经能验证"字节码层面只是一个标志位"这个最反直觉的结论。
+
+**③ 复现"没有 volatile 就看不到"的现象**（这条要说明白前提）：
+
+```java
+public class VisibilityDemo {
+    static boolean running = true;   // 去掉 volatile，worker 可能永远退不出循环
+    // static volatile boolean running = true;
+
+    public static void main(String[] args) throws InterruptedException {
+        new Thread(() -> {
+            while (running) { /* 空循环 */ }
+            System.out.println("worker 退出");
+        }).start();
+        Thread.sleep(1000);
+        running = false;
+        System.out.println("主线程已置 running = false");
+    }
+}
+```
+
+不加 volatile 时，JIT 发现循环体不修改 `running`，会把它**提升（hoist）到寄存器里只读一次**，worker 线程看不到主线程的修改，程序挂住；加上 volatile 后必然正常退出。
+
+> 注意这条的诚实说法：**它依赖 JIT 的具体优化行为，不是 100% 必现**。在 `-Xint`（纯解释执行）下反而一定会退出，因为解释器每次都重新读内存。所以它适合演示、不适合当"我能证明"的依据。要严格验证可见性请用 **jcstress**（OpenJDK 官方的并发测试工具），它能给出确定性的结论与统计。
+
 ---
 
 ## 三、内存屏障
@@ -238,6 +300,8 @@ flowchart TB
 用口诀记：**volatile 写：前 StoreStore，后 StoreLoad**（两道）；**volatile 读：后 LoadLoad + LoadStore**（两道，都在后面）。
 
 注意 volatile 读**前面**是不放屏障的 —— 它不需要阻止上方的读跑到这里之后，只需要阻止下方的读写跑到它之前。
+
+<span style="color:red">**这里最反直觉：volatile 写是「前后各一道」，volatile 读只在「后面」放两道，前面什么都不放。** 面试被问"volatile 读写各插几个屏障、插在哪一侧"，答错方向就说明是背的。另外 x86 上 volatile 读那两道屏障几乎不生成任何指令（TSO 已保证），**真正花钱的只有 volatile 写后面那道 StoreLoad**。</span>
 
 > **面试口径**："volatile 写前后各有一道屏障，前面是 StoreStore、后面是 StoreLoad；volatile 读的后面是 LoadLoad 加 LoadStore。这里最贵的就是 volatile 写后面的那条 StoreLoad，x86 上体现为 lock 前缀指令。JMM 采用的是保守策略：如果相邻两个操作之间没有 volatile 访问，编译器还是可以自由重排，所以 volatile 的开销只会落在真正需要的边界上。"
 
@@ -364,6 +428,8 @@ putstatic     #2      // 3. 把引用赋给静态变量 instance
 ```
 
 问题在于：**步骤 2 和步骤 3 之间不存在数据依赖，JIT 完全可以把它们重排成 1 → 3 → 2**（写引用先于初始化）。加上 volatile 后，步骤 3 之后的 StoreLoad 屏障会禁止这个重排。
+
+<span style="color:red">**必考点的准确答法：这里 volatile 起的是「有序性」作用，不是「可见性」作用。** 很多人答"加 volatile 让其他线程能看到 instance 的更新"——方向错了。真正要挡的是 `new` 的三步重排，让别的线程拿到"引用已赋值但对象没构造完"的半成品。答出这一层才算答对。</span>
 
 #### DCL 重排序问题示意
 

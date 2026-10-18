@@ -2,7 +2,7 @@
 
 讲义存放处。**按主题分目录，不要直接堆在根下。**
 
-> 本文件由 `scripts/gen_notebook_index.py` 自动生成，最后更新于 2026-10-16。
+> 本文件由 `scripts/gen_notebook_index.py` 自动生成，最后更新于 2026-10-18。
 > 新增 / 重命名讲义后重跑脚本即可刷新清单：
 >
 > ```bash
@@ -11,7 +11,7 @@
 
 ## 总览
 
-- **11** 个主题目录，**83** 份讲义，累计约 **21,673** 行
+- **11** 个主题目录，**96** 份讲义，累计约 **24,341** 行
 - 每个主题目录内可含一份 `README.md` 作为该主题的索引与高频题速查表
 
 ## 目录约定
@@ -21,13 +21,13 @@
 | 子目录 | 对应知识地图 | 内容 | 讲义数 |
 | --- | --- | --- | --- |
 | [`jvm/`](#jvm) | `01-jvm.md` | JVM 内存结构、GC、类加载、调优与排查 | 6 份 |
-| [`java-core/`](#java-core) | `02-java-core.md` | Java 底层：集合、并发/JMM、锁、类加载 | 7 份 |
+| [`java-core/`](#java-core) | `02-java-core.md` | Java 底层：集合、并发/JMM、锁、类加载 | 9 份 |
 | [`java-design-patterns/`](#java-design-patterns) | `10-java-design-patterns.md` | GoF 23 种设计模式：定义、实现、源码案例、辨析与坑 | 24 份 |
 | [`mysql/`](#mysql) | `03-mysql.md` | 索引、事务与锁、MVCC、执行计划、主从复制 | 9 份 |
 | [`mq/`](#mq) | `04-mq.md` | RabbitMQ / RocketMQ / Kafka | 4 份 |
-| [`spring-distributed/`](#spring-distributed) | `05-spring-distributed.md` | 分布式事务、缓存一致性、限流熔断 | 1 份 |
+| [`spring-distributed/`](#spring-distributed) | `05-spring-distributed.md` | 分布式事务、分布式 ID、注册配置中心、服务调用、限流熔断、CAP | 11 份 |
 | [`xxl-job/`](#xxl-job) | `06-xxl-job.md` | 调度架构、分片、幂等、高可用 | 1 份 |
-| [`redis/`](#redis) | `07-redis.md` | 数据类型与编码、持久化、集群、缓存问题与分布式锁 | 9 份 |
+| [`redis/`](#redis) | `07-redis.md` | 数据类型与编码、持久化、集群、缓存问题与分布式锁 | 10 份 |
 | [`ai/`](#ai) | `08-ai.md` | LLM / Prompt / RAG / Agent / Java 侧 AI 工程化 | 10 份 |
 | [`algorithm/`](#algorithm) | `09-algorithm.md` | 复杂度分析、套路模板、手撕题、海量数据处理 | 5 份 |
 | [`scenario-design/`](#scenario-design) | `11-scenario-design.md` | 系统设计场景题：红包 / 秒杀 / 短链 / 点赞 等 | 7 份 |
@@ -50,13 +50,17 @@
 
 | 文件 | 标题 | 行数 |
 | --- | --- | --- |
-| [`java-core-aqs.md`](java-core/java-core-aqs.md) | AQS 原理 + Semaphore / CountDownLatch / CyclicBarrier | 487 |
-| [`java-core-cas.md`](java-core/java-core-cas.md) | CAS 特性 + 公平性问题 + ABA 问题 | 467 |
+| [`java-core-aqs.md`](java-core/java-core-aqs.md) | AQS 原理 + Semaphore / CountDownLatch / CyclicBarrier | 721 |
+| [`java-core-cas.md`](java-core/java-core-cas.md) | CAS 特性 + 公平性问题 + ABA 问题 | 561 |
 | [`java-core-classloader-parent-delegation.md`](java-core/java-core-classloader-parent-delegation.md) | 类加载机制与双亲委派模型 | 438 |
 | [`java-core-concurrenthashmap.md`](java-core/java-core-concurrenthashmap.md) | ConcurrentHashMap 深度讲义（JDK 7 → JDK 8） | 551 |
 | [`java-core-hashmap.md`](java-core/java-core-hashmap.md) | HashMap 深度讲义（JDK 8） | 496 |
+| [`java-core-lock-support.md`](java-core/java-core-lock-support.md) | LockSupport 原理与用法 | 351 |
 | [`java-core-synchronized-lock-upgrade.md`](java-core/java-core-synchronized-lock-upgrade.md) | synchronized 与锁升级：从字节码到 ObjectMonitor | 544 |
-| [`java-core-volatile-memory.md`](java-core/java-core-volatile-memory.md) | volatile：可见性原理、MESI 协议与内存屏障 | 495 |
+| [`java-core-unsafe.md`](java-core/java-core-unsafe.md) | Unsafe 是什么？JUC 的地基 | 322 |
+| [`java-core-volatile-memory.md`](java-core/java-core-volatile-memory.md) | volatile：可见性原理、MESI 协议与内存屏障 | 561 |
+
+配图 / 附件：`java-core/images/java-core-aqs-1.png`、`java-core/images/java-core-aqs-2.png`、`java-core/images/java-core-aqs-3.png`、`java-core/images/java-core-aqs-4.png`、`java-core/images/java-core-aqs-5.png`、`java-core/images/java-core-aqs-6.png`
 
 
 ### java-design-patterns
@@ -103,7 +107,7 @@
 | [`mysql-logs.md`](mysql/mysql-logs.md) | MySQL 三大日志：undo log / redo log / binlog | 212 |
 | [`mysql-transaction-mvcc.md`](mysql/mysql-transaction-mvcc.md) | MySQL 事务隔离、MVCC 与当前读：一条线讲透 | 216 |
 
-配图 / 附件：`mysql/images/mysql-arch-layers.png`、`mysql/images/mysql-arch-page.png`、`mysql/images/mysql-btree-capacity.png`、`mysql/images/mysql-btree-structure.png`、`mysql/images/mysql-index-explain.png`、`mysql/images/mysql-index-leftmost.png`、`mysql/images/mysql-locks-deadlock.png`、`mysql/images/mysql-locks-nextkey.png`、`mysql/images/mysql-logs-compare.png`、`mysql/images/mysql-logs-update-flow.png`、`mysql/images/mysql-mvcc-readview.png`、`mysql/images/mysql-mvcc-version-chain.png`
+配图 / 附件：`mysql/images-mysql.zip`
 
 
 ### mq
@@ -120,6 +124,16 @@
 
 | 文件 | 标题 | 行数 |
 | --- | --- | --- |
+| [`README.md`](spring-distributed/README.md) | Spring 与分布式 · 笔记索引 | 37 |
+| [`spring-distributed-boot-vs-cloud.md`](spring-distributed/spring-distributed-boot-vs-cloud.md) | Spring Boot 与 Spring Cloud · 区别与生态 | 143 |
+| [`spring-distributed-cap.md`](spring-distributed/spring-distributed-cap.md) | 分布式理论 · CAP 为什么只能满足两个 | 115 |
+| [`spring-distributed-eureka.md`](spring-distributed/spring-distributed-eureka.md) | Spring Cloud Netflix · Eureka 注册中心 | 113 |
+| [`spring-distributed-id-snowflake.md`](spring-distributed/spring-distributed-id-snowflake.md) | 分布式 ID 与雪花算法（Snowflake）：原理、时钟回拨与工程实践 | 189 |
+| [`spring-distributed-nacos.md`](spring-distributed/spring-distributed-nacos.md) | Spring Cloud Alibaba · Nacos 注册中心与配置中心 | 128 |
+| [`spring-distributed-openfeign.md`](spring-distributed/spring-distributed-openfeign.md) | Spring Cloud OpenFeign · 声明式服务调用 | 212 |
+| [`spring-distributed-resilience4j.md`](spring-distributed/spring-distributed-resilience4j.md) | Resilience4j · 轻量级容错库 | 243 |
+| [`spring-distributed-sentinel.md`](spring-distributed/spring-distributed-sentinel.md) | Spring Cloud Alibaba · Sentinel 流控与熔断降级 | 130 |
+| [`spring-distributed-springboot-startup.md`](spring-distributed/spring-distributed-springboot-startup.md) | Spring Boot · 启动流程 | 137 |
 | [`spring-distributed-transactions.md`](spring-distributed/spring-distributed-transactions.md) | 分布式事务：强一致 XA/2PC、最终一致 TCC/Saga/可靠消息与 TCC 三大防御 | 284 |
 
 
@@ -134,7 +148,7 @@
 
 | 文件 | 标题 | 行数 |
 | --- | --- | --- |
-| [`README.md`](redis/README.md) | Redis · 笔记索引 | 74 |
+| [`README.md`](redis/README.md) | Redis · 笔记索引 | 76 |
 | [`redis-01-data-types.md`](redis/redis-01-data-types.md) | Redis 基础类型：使用场景与底层数据结构 | 216 |
 | [`redis-02-persistence.md`](redis/redis-02-persistence.md) | Redis 持久化：RDB 与 AOF | 534 |
 | [`redis-03-replication-sentinel-cluster.md`](redis/redis-03-replication-sentinel-cluster.md) | Redis 主从复制、哨兵与集群：通信与选举 | 181 |
@@ -143,15 +157,16 @@
 | [`redis-06-eviction-policies.md`](redis/redis-06-eviction-policies.md) | Redis 内存淘汰策略：LRU / LFU 与 8 种 maxmemory-policy | 456 |
 | [`redis-07-cluster-deep-dive.md`](redis/redis-07-cluster-deep-dive.md) | Redis Cluster 深入：槽路由、在线迁移、故障转移、Gossip、脑裂 | 356 |
 | [`redis-08-concurrency-atomicity.md`](redis/redis-08-concurrency-atomicity.md) | Redis 并发安全：单线程下多条命令的原子性怎么保证 | 204 |
+| [`redis-09-cache-db-consistency.md`](redis/redis-09-cache-db-consistency.md) | Redis 缓存与数据库一致性：先删缓存还是先改库 | 148 |
 
-配图 / 附件：`redis/images/redis-cluster-01-slot-routing.png`、`redis/images/redis-cluster-02-moved-ask.png`、`redis/images/redis-cluster-03-failover.png`、`redis/images/redis-cluster-04-gossip.png`、`redis/images/redis-cluster-05-split-brain.png`、`redis/images/redis-concurrency-01-atomicity.png`、`redis/images/redis-ds-01-overview.png`、`redis/images/redis-ds-02-sds.png`、`redis/images/redis-ds-03-listpack-vs-ziplist.png`、`redis/images/redis-ds-04-quicklist.png`、`redis/images/redis-ds-05-dict-rehash.png`、`redis/images/redis-ds-06-intset.png`、`redis/images/redis-ds-07-zset-skiplist.png`
+配图 / 附件：`redis/images-redis.zip`
 
 
 ### ai
 
 | 文件 | 标题 | 行数 |
 | --- | --- | --- |
-| [`README.md`](ai/README.md) | AI 应用开发 · 笔记索引 | 57 |
+| [`README.md`](ai/README.md) | AI 应用开发 · 笔记索引 | 61 |
 | [`ai-01-interview-outline.md`](ai/ai-01-interview-outline.md) | AI 应用方向面试大纲与背诵框架 | 101 |
 | [`ai-02-llm-rag-basics.md`](ai/ai-02-llm-rag-basics.md) | LLM 基础概念与 RAG 完整链路 | 140 |
 | [`ai-03-agent-tool-calling.md`](ai/ai-03-agent-tool-calling.md) | Agent、Tool Calling 与 ReAct | 238 |
@@ -162,7 +177,7 @@
 | [`ai-08-rag-and-vector-db.md`](ai/ai-08-rag-and-vector-db.md) | RAG 工作流程进阶与向量数据库 | 155 |
 | [`ai-project-interview.md`](ai/ai-project-interview.md) | ChatController\#chatMessagesStream 提问全链路梳理 | 95 |
 
-配图 / 附件：`ai/images/ai-chat-full-flow.png`、`ai/images/svg-src/ai-chat-full-flow.svg`、`ai/images/svg2png.js`
+配图 / 附件：`ai/images-ai.zip`
 
 
 ### algorithm

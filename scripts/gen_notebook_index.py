@@ -26,7 +26,7 @@ TOPICS = [
     ("java-design-patterns", "10-java-design-patterns.md", "GoF 23 种设计模式：定义、实现、源码案例、辨析与坑"),
     ("mysql", "03-mysql.md", "索引、事务与锁、MVCC、执行计划、主从复制"),
     ("mq", "04-mq.md", "RabbitMQ / RocketMQ / Kafka"),
-    ("spring-distributed", "05-spring-distributed.md", "分布式事务、缓存一致性、限流熔断"),
+    ("spring-distributed", "05-spring-distributed.md", "分布式事务、分布式 ID、注册配置中心、服务调用、限流熔断、CAP"),
     ("xxl-job", "06-xxl-job.md", "调度架构、分片、幂等、高可用"),
     ("redis", "07-redis.md", "数据类型与编码、持久化、集群、缓存问题与分布式锁"),
     ("ai", "08-ai.md", "LLM / Prompt / RAG / Agent / Java 侧 AI 工程化"),

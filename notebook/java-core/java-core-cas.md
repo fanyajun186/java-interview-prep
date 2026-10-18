@@ -270,6 +270,23 @@ sequenceDiagram
     Note over V: T1 以为没人改过, 实际中间变过两次<br/>这就是 ABA
 ```
 
+### 6.3 一条判据：什么时候 ABA 真的有害？
+
+不是所有 CAS 都怕 ABA。判断标准只有一条：
+
+> **CAS 成功之后，代码是否依赖了「除了那个被比较的值以外」的信息？**
+
+| 场景 | CAS 成功后依赖什么 | ABA 有害吗 |
+| --- | --- | --- |
+| `AtomicInteger.incrementAndGet()` 计数 | 只依赖最终数值本身 | **无害**。值从 5 变 6 再变回 5，再自增成 6，结果依然正确 |
+| 无锁栈/队列的 `pop`（Treiber Stack） | 依赖 `next` 指针指向的结构 | **有害**。值（head 引用）相同，但链表结构已变，会丢元素或断链 |
+| 账户扣款 / 库存扣减 | 依赖"中间没人操作过"这一业务语义 | **有害**。退款被无声吞掉、超卖 |
+| 状态机流转（待支付→已取消→待支付） | 依赖状态没被绕一圈 | **有害**。绕回同一状态意味着中间发生过非法流转 |
+
+**记忆方法**：「**只算数的不怕，动结构/动业务的怕**」。纯计数器只需最终值对；一旦 CAS 成功后还要去读指针、判断业务状态，值相同就不足以证明"没人动过"。
+
+> 面试口径：被问「是不是所有 CAS 都要处理 ABA」，答「不是，要看 CAS 成功后是否依赖值以外的信息。像 `AtomicInteger` 自增这类只关心最终值的场景 ABA 无害；而基于引用的无锁数据结构（Treiber 栈、`ConcurrentLinkedQueue`）和"改了又改回来"的业务场景（退款、回滚、状态流转）就必须处理。」
+
 ---
 
 ## 7. ABA 的解决方式
@@ -299,8 +316,10 @@ public class AtomicStampedFixDemo {
         System.out.println("===== 场景: 100 -> 50 -> 100, 中间被改过 =====");
 
         Thread t1 = new Thread(() -> {
-            int stamp = ref.getStamp();      // 读到版本号 0
-            Integer value = ref.getReference();
+            // 用 get(int[]) 一次读出配套的 值 + 戳（别分开调两次，见 §7.5）
+            int[] stampHolder = new int[1];
+            Integer value = ref.get(stampHolder);
+            int stamp = stampHolder[0];      // 读到 value=100, stamp=0
             System.out.println("T1 读到 value=" + value + ", stamp=" + stamp);
 
             try { Thread.sleep(1000); } catch (InterruptedException e) { }
@@ -339,13 +358,16 @@ public class AtomicStampedFixDemo {
 
 ```java
 AtomicStampedReference<Integer> ref = new AtomicStampedReference<>(100, 0);
-ref.getReference();                          // 当前值
-ref.getStamp();                              // 当前版本戳
+int[] h = new int[1];
+Integer v = ref.get(h);                      // ✅ 推荐：一次读出配套的 值 + 戳
+int s = h[0];
+ref.getReference();                          // 只读值（单独读有 §7.5 的配套问题）
+ref.getStamp();                              // 只读戳（同上）
 ref.compareAndSet(期望值, 新值, 期望戳, 新戳);  // 值和戳同时匹配才成功
 ref.attemptStamp(期望值, 新戳);                // 只改戳（值未变时）
 ```
 
-> 面试口径：「AtomicStampedReference 的坑：① 版本戳是 int，理论上会溢出回绕，但 int 范围 21 亿次修改实际很难达到；② 它比较的是**引用**（==），包装类型要注意 Integer 缓存陷阱（-128~127），不要用 `new Integer` 或超出缓存范围的值做 CAS，否则引用不相等导致永远失败——建议用不可变对象并在外部持有同一个引用。」
+> 面试口径：「AtomicStampedReference 的三个坑（详见 §7.4、§7.5）：① 底层是把值和戳打包成不可变 Pair，CAS 的是这个 Pair 引用，所以能"同时"比较；② `getReference()` 和 `getStamp()` 是两次独立读，可能拿到不配套的组合，要用 `get(int[] stampHolder)` 一次读；③ 它比较的是**引用**（`==`）不是 `equals`，包装类型要注意 Integer 缓存陷阱（-128~127），不要用 `new Integer` 或超出缓存范围的值做 CAS，否则引用不相等导致永远失败。」
 
 ### 7.3 `AtomicMarkableReference` 的最小示例
 
@@ -368,6 +390,71 @@ public class AtomicMarkableDemo {
     }
 }
 ```
+
+### 7.4 底层实现：为什么戳能「同时」比较
+
+`AtomicStampedReference` 的源码（JDK 8，本机 src.zip 核实）里没有两个字段，**只有一个**：
+
+```java
+public class AtomicStampedReference<V> {
+    // 值和戳被打包成一个不可变对象
+    private static class Pair<T> {
+        final T reference;
+        final int stamp;
+        // ...
+    }
+
+    // 注意：只有一个 volatile 字段，指向 Pair
+    private volatile Pair<V> pair;
+
+    public boolean compareAndSet(V expectedReference, V newReference,
+                                 int expectedStamp, int newStamp) {
+        Pair<V> current = pair;
+        return
+            expectedReference == current.reference &&   // 先比引用
+            expectedStamp     == current.stamp &&       // 再比戳
+            ((newReference == current.reference &&
+              newStamp == current.stamp) ||
+             casPair(current, Pair.of(newReference, newStamp)));  // 最后 CAS 整个 Pair
+    }
+
+    private boolean casPair(Pair<V> cmp, Pair<V> val) {
+        return UNSAFE.compareAndSwapObject(this, pairOffset, cmp, val);  // 只 CAS 一个引用
+    }
+}
+```
+
+**这是理解它的关键**：值的比较和戳的比较之所以能"同时"成立，不是因为 CAS 支持比较两个字段，而是因为**值 + 戳被预先打包成一个不可变 Pair 对象，CAS 的只是这一个对象引用**。只要值和戳有一个变了，就会生成新的 Pair，旧引用不再相等，CAS 自然失败。
+
+> 同一思路也在 AQS 的 `Node`、`ConcurrentHashMap` 的 `Node` 上体现：**要原子地维护多个字段，就把它们装进一个不可变对象，用一次 CAS 换整个对象**——这是无锁编程的通用手法。
+
+### 7.5 两个必须知道的坑（第 2 个大多数人不知道）
+
+**坑 1：`getReference()` + `getStamp()` 是两次独立读，拿到的可能不是配套的组合**
+
+<span style="color:red">**`getReference()` 和 `getStamp()` 各自读一次 `pair`，两次读之间值可能已经被别人改掉。** 如果你读到之后还要基于它做判断或计算，就可能基于一个"从未真实存在过"的组合做决策。正确做法是用 `get(int[] stampHolder)` —— 它只读一次 `pair`，返回配套的值和戳。</span>
+
+```java
+// ❌ 不推荐：两次独立读，中间可能被改
+int stamp = ref.getStamp();
+Integer value = ref.getReference();
+// 此刻 value 和 stamp 可能不是同一个 Pair 里的，组合从未真实存在
+
+// ✅ 推荐：一次读，拿到一致的快照
+int[] stampHolder = new int[1];
+Integer value = ref.get(stampHolder);
+int stamp = stampHolder[0];        // value 与 stamp 一定配套
+```
+
+这不是理论问题——Oracle 的 javadoc 里就明确写了推荐用法：`int[1] holder; ref = v.get(holder);`。本讲义 §7.2 的示例为了可读性写成了分开读，**生产代码请改成 `get(int[])`**。
+
+**坑 2：版本戳是 `int`，理论上会回绕**
+
+`int` 只有 21 亿，超过就绕回负数。同一个引用被改 21 亿次在实践中几乎不可能达到（按每秒 100 万次修改算要约 35 分钟，实际业务远达不到这个速率），所以**工程上不用担心**。但面试若被追问"版本戳会不会溢出"，答「会回绕，但需要同一位置被修改 21 亿次，实际业务达不到；真要彻底规避可以用更长的戳或时间戳」。
+
+**坑 3（附）：它比较的是引用（`==`），不是 `equals`**
+
+所以用包装类型要小心 **Integer 缓存陷阱**（只有 -128~127 会复用同一对象）。`new Integer(100)` 和自动装箱的 `100` 引用不相等，CAS 会永远失败。建议用不可变对象（字符串常量、枚举、自定义不可变类），或干脆用 `AtomicInteger` 这种基本类型版本。
 
 ---
 
@@ -432,6 +519,9 @@ public class LongAdderCompareDemo {
 | L4 | 给出三个真实的 ABA 场景（无锁栈、账户、库存/DB 乐观锁）。 | ① 无锁栈 pop：栈顶 A→B→A，CAS 判 head 仍是 A 而成功 pop，但 next 指针已指向旧结构，导致元素丢失或链表断裂；② 账户余额：100→50（扣款）→100（退款），T1 的 CAS(100,80) 成功，退款被无声吞掉；③ DB 乐观锁：库存改了又改回，where stock=旧值 命中造成超卖——必须带 version 字段而非直接比业务值。 |
 | L4 | AtomicStampedReference 和 AtomicMarkableReference 的区别？分别什么时候用？ | AtomicStampedReference 是"值 + int 版本戳"，每次修改戳递增，CAS 同时比较值和戳，能知道"变过几次"，是 ABA 通用解；AtomicMarkableReference 是"值 + boolean 标记"，只关心"是否被改过"，不关心次数，适合 GC 标记、节点逻辑删除标记这类二元状态场景。判断依据：需要区分变化次数就用前者，只需是否变过就用后者。 |
 | L4 | AtomicStampedReference 用 Integer 做 value 有什么坑？（Integer 缓存 + 引用比较） | 坑在于它的 CAS 比较的是引用（==）而非 equals，而 Integer 对 -128~127 有缓存：范围内 valueOf 返回同一对象所以侥幸成功，超出范围每次装箱都是新对象，导致"值明明相等 CAS 却永远失败"。正确做法：要么全程持有同一个对象引用做 CAS，要么改用自定义不可变类，避免依赖包装类型的缓存行为。 |
+| L4 | `AtomicStampedReference` 底层是怎么做到"同时"比较值和戳的？ | 它没有两个字段，只有一个 `private volatile Pair<V> pair`——值和戳被打包成一个不可变 Pair 对象，`compareAndSet` 先比 reference 和 stamp，最后 `compareAndSwapObject(this, pairOffset, cmp, val)` **CAS 的是整个 Pair 的引用**。所以"同时"的本质是：任一字段变化就生成新 Pair，旧引用自然不相等。这个"多字段打包成不可变对象、一次 CAS 换整个对象"的手法在 AQS 的 Node、ConcurrentHashMap 的 Node 上都用到。 |
+| L5 | `getReference()` 和 `getStamp()` 能直接用吗？为什么 javadoc 推荐 `get(int[] stampHolder)`？ | <span style="color:red">**不能随意用**。这两个方法是各自独立读一次 `pair`，两次读之间值可能已被其他线程改掉，**你拿到的 value 和 stamp 可能不属于同一个 Pair，这个组合从未真实存在过**。</span>如果读到之后还要做判断或计算，就会基于不一致的快照决策。正确做法是 `int[] h = new int[1]; Integer v = ref.get(h); int stamp = h[0];` —— 只读一次 pair，保证两者配套。Oracle javadoc 里就明确推荐这个用法。 |
+| L5 | 是不是所有 CAS 都必须处理 ABA？ | 不是，判据是「**CAS 成功之后，代码是否依赖了值以外的信息**」。只算数的场景 ABA 无害：`AtomicInteger.incrementAndGet()` 只关心最终数值，值从 5 变 6 再变回 5 再自增成 6，结果依然正确。而基于引用的无锁结构（Treiber 栈、ConcurrentLinkedQueue）和"改了又改回来"的业务场景（退款、回滚、状态流转）依赖值以外的结构或语义，必须处理。口诀：**只算数的不怕，动结构/动业务的怕**。 |
 | L5 | LongAdder 为什么比 AtomicLong 快？它的 sum() 有什么语义缺陷？什么场景不能用？ | 快的原因：AtomicLong 是所有线程 CAS 同一个变量，热点集中失败率高；LongAdder 内部是 base + Cell[] 数组，线程按哈希分散到不同 Cell 上累加，冲突概率大幅下降，典型场景下快数倍。缺陷：sum() 是逐个累加 Cell，过程中可能有 Cell 正在被更新，不是强一致快照。所以只用于 QPS 统计等计数场景，不能用于需要精确值的状态机、限流器、幂等判断。 |
 | L5 | 数据库的乐观锁怎么写才不会有 ABA 问题？ | 必须带版本字段而不是直接比业务值：update t set stock=stock-1, version=version+1 where id=? and version=?，用读时拿到的 version 做匹配条件，更新成功即影响行数为 1，失败则重读重试。若写成 where stock=100 直接比业务值，库存改了又改回来时就会命中旧值导致超卖——这正是数据库层面的 ABA，version 等价于 AtomicStampedReference 的版本戳。 |
 | L5 | ConcurrentHashMap 里哪些地方用了 CAS？为什么 JDK 8 不全程用 CAS 而是部分用 synchronized？ | JDK 8 的 ConcurrentHashMap 用 CAS 的地方：casTabAt 做空桶插入、sizeCtl 初始化和扩容标志、transferIndex 扩容任务划分、addCount 计数。但桶内已有节点（哈希冲突）时用 synchronized 锁住链表/红黑树头节点再插入，因为桶内修改涉及多步指针操作，CAS 只能保护单变量无法保证复合操作原子性，且 synchronized 已优化到竞争低时很轻量。 |
@@ -449,6 +539,8 @@ public class LongAdderCompareDemo {
 | 「AtomicInteger 能原子地更新多个变量」 | 不能，它只保护自己那一个 int，compareAndSwapInt 一次只操作一个内存字。要原子改多个变量：封装成对象用 AtomicReference 整体换引用；或把多个值打包进一个 long 的高低 32 位（ReentrantReadWriteLock 对读写计数的做法）；或直接加锁保护复合操作。 |
 | 「ABA 问题在业务系统里很少见，不用管」 | 账户余额、库存、订单状态机这类"值会来回变"的场景天然是 ABA 温床：只要存在退款、回滚、撤销等"改了又改回来"的业务路径，只比值的 CAS 就可能吞掉中间变更。正确做法是加版本戳——Java 层用 AtomicStampedReference，数据库乐观锁用 version 字段，绝不要直接比对业务值。 |
 | 「用 AtomicStampedReference 包装 Integer 就万事大吉」 | 版本戳解的是 ABA，但它比较值时用 == 比较引用而非 equals：Integer 只对 -128~127 缓存，超出范围 Integer.valueOf(1000) 每次返回新对象，CAS 会因引用不等而永远失败。规避方式：全程持有同一对象引用做 CAS，或改用自定义不可变类，不要依赖包装类型缓存。 |
+| 「`getReference()` 再 `getStamp()` 读出来就能做判断」 | <span style="color:red">这两个方法各自独立读一次 `pair`，两次读之间值可能被改，**拿到的 value 和 stamp 可能不配套，这个组合从未真实存在过**。</span>基于它做判断或计算就是基于错误快照。正确用法是 `int[] h = new int[1]; Integer v = ref.get(h); int stamp = h[0];`——一次读，保证配套（Oracle javadoc 的推荐用法）。 |
+| 「CAS 成功后还需要读别的字段，这跟 ABA 无关」 | 恰恰相反，这正是 ABA 有害的原因。CAS 只保证"被比较的那个值没变"，不保证"值以外的信息没变"。无锁栈里 head 引用相同但 next 指针已指向别的结构，退款场景里余额相同但中间发生过扣款，都是"值对了、上下文错了"。所以判断要不要防 ABA，就看 CAS 成功后是否依赖值以外的信息。 |
 | 「LongAdder 可以完全替代 AtomicLong」 | 不能。LongAdder 的 sum() 是逐个累加 Cell 的结果，并发更新过程中读到的不是强一致快照，只适合 QPS 统计、监控计数这类允许短暂不一致的场景。需要精确值或 compareAndSet 语义的地方（限流器、状态机、幂等判断）必须用 AtomicLong。两者是"高吞吐弱一致"与"低吞吐强一致"的取舍。 |
 | 「CAS 公平，因为谁先调用谁先执行」 | CAS 不保证公平：它是抢占语义，不排队、不记录到达顺序，后到线程完全可能第一次就成功，先到线程可能因反复被抢先而长期饥饿。要公平就用 AQS 公平锁（FairSync 里靠 hasQueuedPredecessors() 保证队列顺序），代价是吞吐下降；"先到先得"是队列锁的特性，不是 CAS 的。 |
 | 「自旋就是 while(true) 死循环，JDK 里也这么写」 | JDK 的自旋都有退出条件：synchronized 轻量锁自旋达到次数上限（默认约 10 次或自适应调整）就膨胀为重量级锁改为 park 排队；ARM 的 LL/SC 因存在虚假失败才必须包循环重试。业务代码里手写 for(;;) CAS 必须加退避（Thread.yield 或 LockSupport.parkNanos 随机化），否则就是真死循环烧核。 |
@@ -463,5 +555,7 @@ public class LongAdderCompareDemo {
 - **缺点**：① 自旋烧 CPU ② 只能改一个变量 ③ ABA ④ 高竞争吞吐反而降。
 - **公平性**：CAS **不保证公平**（抢占语义，可能饥饿）。解法：AQS 公平锁（`hasQueuedPredecessors`）、yield/指数退避、LongAdder 分散热点、自旋上限后升级重量级锁（synchronized 锁升级思路）。
 - **ABA**：值从 A → B → A，CAS 误判未变。场景：无锁栈 pop、账户余额 100→50→100、库存回滚、DB 乐观锁只比值不比版本。
+- **ABA 要不要处理**：只看一条——**CAS 成功后是否依赖值以外的信息**。只算数的不怕（`incrementAndGet`），动结构/动业务的怕（无锁栈、退款回滚、状态流转）。
 - **解 ABA**：`AtomicStampedReference`（值+版本戳）、`AtomicMarkableReference`（值+布尔标记）、DB `version` 字段、悲观锁、不可变对象。
+- **StampedReference 三个要点**：① 底层是「值+戳打包成不可变 `Pair`，CAS 的是 Pair 引用」；② <span style="color:red">取值用 `get(int[] stampHolder)`，别分开调 `getReference()` + `getStamp()`</span>（两次读可能不配套）；③ 它用 `==` 比引用，注意 Integer 缓存陷阱。
 - **热点计数**：优先 LongAdder（分段 Cell 分散竞争），但要接受 sum() 弱一致。

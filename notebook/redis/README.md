@@ -2,6 +2,7 @@
 
 > 2026-10-13 首批成稿，对应四问：基础类型与底层结构 / 持久化 / 主从哨兵集群 / 单线程模型。
 > 2026-10-16 增补 redis-07（Cluster 深挖）、redis-08（并发与原子性），并回填 redis-01 的 Set 详解与选型对照表。新增 6 张结构图，放在 `images/`。
+> 2026-10-17 增补 redis-09（缓存与数据库一致性 / Cache Aside）：四种顺序组合竞态、删除失败兜底、强一致（延迟双删 / 串行化）、Canal 订阅 binlog。含一处勘误（方案四脏数据概率的成立条件）。
 
 > **配图已内嵌 · 形态：行内 base64 PNG**：本目录 13 张图全部内嵌进对应 md，单文件自包含。正文里的图片就是标准行内写法 `![说明](data:image/png;base64,…)`，一张图一行，单张编码控制在 48KB 以内。
 > 两条硬约束（都是踩过坑换来的，别改回去）：① **必须用 PNG** —— 不少阅读器出于 XSS 考虑过滤 SVG，内联源码和 data URI 都不显示；② **单张 base64 必须压到 48KB 以内** —— Typora 对超长 base64 有硬门槛（官方 issue #6057），超了会直接退化成显示一长串编码，图反而看不见。另外**不要改成引用式**（正文留短标签、编码放文件末尾）：Typora 能显示，但 WorkBuddy 的 md 预览解析不了那个悬空引用，图会变成一段标签文字。
@@ -22,6 +23,7 @@
 | `redis-06-eviction-policies.md` | 内存满了怎么办 / 两个默认值（`maxmemory 0` + `noeviction`）/ **8 种策略总表（候选集 × 淘汰依据 × 淘汰时机）** / 近似 LRU（24 bit 时间戳 + 采样 + 16 槽候选池）/ LFU（16 bit LDT + 8 bit 对数计数器、衰减、扫描污染）/ 淘汰 vs 过期删除 / 排查与监控 |
 | `redis-07-cluster-deep-dive.md` | Cluster 深挖：槽路由与客户端缓存刷新时机 / hash tag 真实规则 / **在线槽迁移全流程（IMPORTING→MIGRATING→MIGRATE→NODE）** / MOVED 与 ASK 分工 / 节点宕机时谁回 MOVED / **PFAIL→FAIL 三个条件（含「2×timeout 是 TTL 不是门槛」的纠正）** / 从节点竞选延迟公式与资格过滤 / 复制偏移量真相 / Gossip 与主从复制的区分 / **脑裂与 `cluster-require-full-coverage` 的完整推演**。附 5 张图（`images/`） |
 | `redis-08-concurrency-atomicity.md` | 并发四层手段：单条命令原子 / **Lua（首选，能拿中间结果做判断）** / MULTI-EXEC（只打包不回滚，WATCH 乐观锁）/ 分布式锁（`SET NX EX` 一条命令、Lua 校验 uuid 解锁、看门狗续期）/ CPU 打满后的横向扩展与阻塞源规避。附 1 张图 |
+| `redis-09-cache-db-consistency.md` | 缓存与数据库一致性：先删缓存还是先改库？四种顺序组合竞态 / 方案四（Cache Aside）为什么最稳 / 删除失败三兜底（MQ 重试 · Canal binlog · 过期兜底）/ 强一致（延迟双删 · 串行化）/ 回源并发与库存设计。含一处勘误 |
 
 ## 高频题速查
 
