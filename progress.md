@@ -23,7 +23,7 @@
 
 | 日期 | 主题 | 范围 | 动作 | 掌握度 | 备注 |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-08 | JVM | G1 的 RSet | 学习 | 0 → 2 | 讲义：notebook/jvm/jvm-g1-rset.md；实验待补 |
+| 2026-10-08 | JVM | 卡表与 RSet（记忆集） | 学习 | 0 → 2 | 讲义：notebook/jvm/jvm-card-table-remembered-set.md；实验待补 |
 | 2026-10-08 | JVM | CMS 运作过程与 STW 时机 | 学习 | 1 → 2 | 讲义：notebook/jvm/jvm-cms.md；实验待补 |
 | 2026-10-09 | JVM | 新生代 8:1:1、Minor GC / Full GC 触发与 STW | 学习 | 1 → 2（待验证） | 讲义：notebook/jvm/jvm-young-old-gen-gc-events.md |
 | 2026-10-10 | JVM | 三色标记、增量更新 vs SATB、CMS / G1 阶段对照 | 学习 | 1 → 2（待验证） | 讲义：notebook/jvm/jvm-tricolor-satb-incremental-update.md |

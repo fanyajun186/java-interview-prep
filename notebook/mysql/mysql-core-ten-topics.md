@@ -1,7 +1,7 @@
 # MySQL 核心十大主题 · 总纲索引（InnoDB）
 
 > 面向中大厂高级工程师面试（对标阿里 P6-P7 / 腾讯 T9-T10）。版本前提：MySQL 5.7 / 8.0；InnoDB。
-> 本文只作总纲与学习路线，详细内容已拆分为 6 份子讲义（每份含配图、面试问法、追问链、误区，全部自带答案）。
+> 本文只作总纲与学习路线，详细内容已拆分为 7 份子讲义（每份含配图/流程图、面试问法、追问链、误区，全部自带答案）。原 6 份用行内 base64 PNG 配图；主从复制篇（mysql-replication.md）新增，用 Mermaid 流程图（纯文本、可版本管理、GitHub/VS Code/Obsidian 直渲染），风格与其余子讲义一致。
 
 > **配图已内嵌 · 形态：行内 base64 PNG**：子讲义里的 12 张图全部内嵌进对应 md，单文件自包含。正文里的图片就是标准行内写法 `![说明](data:image/png;base64,…)`，一张图一行，单张编码控制在 48KB 以内。
 > 三条硬约束（都是踩过坑换来的，别改回去）：① **必须用 PNG** —— 不少阅读器出于 XSS 考虑过滤 SVG，内联源码和 data URI 都不显示；② **单张 base64 必须压到 48KB 以内** —— Typora 对超长 base64 有硬门槛（官方 issue #6057），超了会直接退化成显示一长串编码，图反而看不见；③ **不要改成引用式**（正文留短标签、编码放文件末尾）—— Typora 能显示，但 WorkBuddy 的 md 预览解析不了悬空引用，图会变成一段标签文字。
@@ -19,6 +19,7 @@
 | 5 | undo log / redo log / binlog | [mysql-logs.md](mysql-logs.md) | 独立成篇 |
 | 4+10 | 锁体系 / 死锁 | [mysql-locks-deadlock.md](mysql-locks-deadlock.md) | 死锁是锁规则的直接推论 |
 | 8+9 | 索引失效 / 慢 SQL 分析优化 | [mysql-index-optimization.md](mysql-index-optimization.md) | 失效是「为什么慢」，EXPLAIN 闭环是「怎么查怎么治」 |
+| 补充 | 主从复制 / 半同步 / GTID / 并行复制 | [mysql-replication.md](mysql-replication.md) | 异步复制三段式（dump/IO/SQL）+ 半同步等待点 + GTID 自动位点 + MTS 并行复制，补「会不会丢数据」闭环 |
 
 ## 建议学习顺序
 
@@ -28,6 +29,7 @@
 4. **[mysql-logs.md](mysql-logs.md)** — WAL 为什么快、redo 循环写与 checkpoint、doublewrite、两阶段提交、组提交、purge、双 1 参数、崩溃恢复流程。配图：update 链路时序图、三日志对比图。
 5. **[mysql-locks-deadlock.md](mysql-locks-deadlock.md)** — 锁全景、加锁规则两原则两优化一个 bug、四类推演案例、死锁两类高频场景、等待图检测与 victim 选择、治理优先级。配图：next-key lock 区间图、死锁等待环图。
 6. **[mysql-index-optimization.md](mysql-index-optimization.md)** — 最左前缀的物理有序性、索引失效清单、ICP/MRR、EXPLAIN 逐列判读、key_len 反推、深分页三方案、选错索引与统计信息。配图：最左前缀原理图、EXPLAIN 判读图。
+7. **[mysql-replication.md](mysql-replication.md)** — 主从复制三段式链路、binlog 三种格式、异步/半同步（AFTER_COMMIT 与 AFTER_SYNC 等待点）/全同步、GTID 自动位点、MTS 并行复制、主从延迟根因与治理、双 1 参数与丢数据闭环。配图：主从复制链路 Mermaid 图。
 
 ## 跨讲义主线（面试串场用）
 

@@ -2,7 +2,7 @@
 
 讲义存放处。**按主题分目录，不要直接堆在根下。**
 
-> 本文件由 `scripts/gen_notebook_index.py` 自动生成，最后更新于 2026-10-18。
+> 本文件由 `scripts/gen_notebook_index.py` 自动生成，最后更新于 2026-10-28。
 > 新增 / 重命名讲义后重跑脚本即可刷新清单：
 >
 > ```bash
@@ -11,7 +11,7 @@
 
 ## 总览
 
-- **11** 个主题目录，**96** 份讲义，累计约 **24,341** 行
+- **11** 个主题目录，**103** 份讲义，累计约 **28,141** 行
 - 每个主题目录内可含一份 `README.md` 作为该主题的索引与高频题速查表
 
 ## 目录约定
@@ -20,10 +20,10 @@
 
 | 子目录 | 对应知识地图 | 内容 | 讲义数 |
 | --- | --- | --- | --- |
-| [`jvm/`](#jvm) | `01-jvm.md` | JVM 内存结构、GC、类加载、调优与排查 | 6 份 |
-| [`java-core/`](#java-core) | `02-java-core.md` | Java 底层：集合、并发/JMM、锁、类加载 | 9 份 |
+| [`jvm/`](#jvm) | `01-jvm.md` | JVM 内存结构、GC、类加载、调优与排查 | 8 份 |
+| [`java-core/`](#java-core) | `02-java-core.md` | Java 底层：集合、并发/JMM、锁、类加载 | 12 份 |
 | [`java-design-patterns/`](#java-design-patterns) | `10-java-design-patterns.md` | GoF 23 种设计模式：定义、实现、源码案例、辨析与坑 | 24 份 |
-| [`mysql/`](#mysql) | `03-mysql.md` | 索引、事务与锁、MVCC、执行计划、主从复制 | 9 份 |
+| [`mysql/`](#mysql) | `03-mysql.md` | 索引、事务与锁、MVCC、执行计划、主从复制 | 11 份 |
 | [`mq/`](#mq) | `04-mq.md` | RabbitMQ / RocketMQ / Kafka | 4 份 |
 | [`spring-distributed/`](#spring-distributed) | `05-spring-distributed.md` | 分布式事务、分布式 ID、注册配置中心、服务调用、限流熔断、CAP | 11 份 |
 | [`xxl-job/`](#xxl-job) | `06-xxl-job.md` | 调度架构、分片、幂等、高可用 | 1 份 |
@@ -38,12 +38,16 @@
 
 | 文件 | 标题 | 行数 |
 | --- | --- | --- |
+| [`jvm-card-table-remembered-set.md`](jvm/jvm-card-table-remembered-set.md) | JVM · 卡表与 RSet（记忆集） | 532 |
+| [`jvm-class-loading.md`](jvm/jvm-class-loading.md) | JVM · 类加载机制与双亲委派 | 432 |
 | [`jvm-cms.md`](jvm/jvm-cms.md) | JVM · CMS 收集器 | 165 |
-| [`jvm-g1-rset.md`](jvm/jvm-g1-rset.md) | JVM · G1 的 RSet | 155 |
+| [`jvm-g1-collector.md`](jvm/jvm-g1-collector.md) | JVM · G1 收集器：Region 布局与 GC 时序 | 1422 |
 | [`jvm-tricolor-satb-incremental-update.md`](jvm/jvm-tricolor-satb-incremental-update.md) | 三色标记法、增量更新与 SATB 完整对比 | 183 |
 | [`jvm-write-barrier.md`](jvm/jvm-write-barrier.md) | 写前屏障与写后屏障（Write Barrier）详解 | 198 |
 | [`jvm-young-old-gen-gc-events.md`](jvm/jvm-young-old-gen-gc-events.md) | JVM 新生代划分与 GC 事件对照（Minor GC / Full GC / STW） | 182 |
 | [`jvm-young-old-gen-ratio-tuning.md`](jvm/jvm-young-old-gen-ratio-tuning.md) | 新生代 / 老年代比例的业务化设置：ParNew + CMS vs G1 | 303 |
+
+配图 / 附件：`jvm/images/class-loading-jit.png`、`jvm/images/class-loading-lifecycle.png`、`jvm/images/class-loading-steps.png`、`jvm/images/classloader-breaks.png`
 
 
 ### java-core
@@ -57,10 +61,11 @@
 | [`java-core-hashmap.md`](java-core/java-core-hashmap.md) | HashMap 深度讲义（JDK 8） | 496 |
 | [`java-core-lock-support.md`](java-core/java-core-lock-support.md) | LockSupport 原理与用法 | 351 |
 | [`java-core-synchronized-lock-upgrade.md`](java-core/java-core-synchronized-lock-upgrade.md) | synchronized 与锁升级：从字节码到 ObjectMonitor | 544 |
+| [`java-core-threadlocal.md`](java-core/java-core-threadlocal.md) | ThreadLocal：引用链、ThreadLocalMap 与泄漏的真实因果 | 512 |
+| [`java-core-threadpool.md`](java-core/java-core-threadpool.md) | 线程池 ThreadPoolExecutor：参数、流转、拒绝策略与三个线上坑 | 408 |
+| [`java-core-try-catch-finally.md`](java-core/java-core-try-catch-finally.md) | try-catch-finally 执行顺序：return 遇上 finally 谁说了算 | 264 |
 | [`java-core-unsafe.md`](java-core/java-core-unsafe.md) | Unsafe 是什么？JUC 的地基 | 322 |
 | [`java-core-volatile-memory.md`](java-core/java-core-volatile-memory.md) | volatile：可见性原理、MESI 协议与内存屏障 | 561 |
-
-配图 / 附件：`java-core/images/java-core-aqs-1.png`、`java-core/images/java-core-aqs-2.png`、`java-core/images/java-core-aqs-3.png`、`java-core/images/java-core-aqs-4.png`、`java-core/images/java-core-aqs-5.png`、`java-core/images/java-core-aqs-6.png`
 
 
 ### java-design-patterns
@@ -97,17 +102,17 @@
 
 | 文件 | 标题 | 行数 |
 | --- | --- | --- |
-| [`mysql-architecture.md`](mysql/mysql-architecture.md) | MySQL 主题一：InnoDB 从 Server 层到引擎层的架构 | 204 |
-| [`mysql-btree-and-sharding.md`](mysql/mysql-btree-and-sharding.md) | MySQL 主题 2：为什么选 B+ 树、三层容量手算与 2000 万分表阈值 | 169 |
-| [`mysql-core-ten-topics.md`](mysql/mysql-core-ten-topics.md) | MySQL 核心十大主题 · 总纲索引（InnoDB） | 47 |
+| [`mysql-architecture.md`](mysql/mysql-architecture.md) | MySQL 主题一：InnoDB 从 Server 层到引擎层的架构 | 129 |
+| [`mysql-btree-and-sharding.md`](mysql/mysql-btree-and-sharding.md) | MySQL 主题 2：为什么选 B+ 树、三层容量手算与 2000 万分表阈值 | 332 |
+| [`mysql-core-ten-topics.md`](mysql/mysql-core-ten-topics.md) | MySQL 核心十大主题 · 总纲索引（InnoDB） | 49 |
 | [`mysql-index-optimization.md`](mysql/mysql-index-optimization.md) | MySQL 索引失效与慢 SQL 分析优化（合并讲义） | 227 |
 | [`mysql-join-small-table-drives-big.md`](mysql/mysql-join-small-table-drives-big.md) | MySQL InnoDB 连表查询：为什么「小表驱动大表」 | 287 |
 | [`mysql-lock-with-without-transactional.md`](mysql/mysql-lock-with-without-transactional.md) | InnoDB + RR：加与不加 @Transactional 时的加锁行为全解 | 320 |
 | [`mysql-locks-deadlock.md`](mysql/mysql-locks-deadlock.md) | MySQL 锁体系与死锁：一条线讲透 | 271 |
-| [`mysql-logs.md`](mysql/mysql-logs.md) | MySQL 三大日志：undo log / redo log / binlog | 212 |
+| [`mysql-logs.md`](mysql/mysql-logs.md) | MySQL 三大日志：undo log / redo log / binlog | 260 |
+| [`mysql-range-query-division.md`](mysql/mysql-range-query-division.md) | 范围查询的引擎层与 Server 层分工 | 137 |
+| [`mysql-replication.md`](mysql/mysql-replication.md) | MySQL 主从复制（Replication） | 92 |
 | [`mysql-transaction-mvcc.md`](mysql/mysql-transaction-mvcc.md) | MySQL 事务隔离、MVCC 与当前读：一条线讲透 | 216 |
-
-配图 / 附件：`mysql/images-mysql.zip`
 
 
 ### mq
@@ -154,12 +159,10 @@
 | [`redis-03-replication-sentinel-cluster.md`](redis/redis-03-replication-sentinel-cluster.md) | Redis 主从复制、哨兵与集群：通信与选举 | 181 |
 | [`redis-04-single-thread-model.md`](redis/redis-04-single-thread-model.md) | Redis 单线程模型与 6.0 多线程 IO | 115 |
 | [`redis-05-internal-encoding.md`](redis/redis-05-internal-encoding.md) | Redis 底层数据结构深度：SDS / listpack / quicklist / dict / intset / skiplist | 178 |
-| [`redis-06-eviction-policies.md`](redis/redis-06-eviction-policies.md) | Redis 内存淘汰策略：LRU / LFU 与 8 种 maxmemory-policy | 456 |
+| [`redis-06-eviction-policies.md`](redis/redis-06-eviction-policies.md) | Redis 内存淘汰策略：LRU / LFU 与 8 种 maxmemory-policy | 474 |
 | [`redis-07-cluster-deep-dive.md`](redis/redis-07-cluster-deep-dive.md) | Redis Cluster 深入：槽路由、在线迁移、故障转移、Gossip、脑裂 | 356 |
 | [`redis-08-concurrency-atomicity.md`](redis/redis-08-concurrency-atomicity.md) | Redis 并发安全：单线程下多条命令的原子性怎么保证 | 204 |
 | [`redis-09-cache-db-consistency.md`](redis/redis-09-cache-db-consistency.md) | Redis 缓存与数据库一致性：先删缓存还是先改库 | 148 |
-
-配图 / 附件：`redis/images-redis.zip`
 
 
 ### ai
@@ -176,8 +179,6 @@
 | [`ai-07-agent-paradigms.md`](ai/ai-07-agent-paradigms.md) | Agent 范式：定义、组件、推理模式与 Workflow 的边界 | 282 |
 | [`ai-08-rag-and-vector-db.md`](ai/ai-08-rag-and-vector-db.md) | RAG 工作流程进阶与向量数据库 | 155 |
 | [`ai-project-interview.md`](ai/ai-project-interview.md) | ChatController\#chatMessagesStream 提问全链路梳理 | 95 |
-
-配图 / 附件：`ai/images-ai.zip`
 
 
 ### algorithm
