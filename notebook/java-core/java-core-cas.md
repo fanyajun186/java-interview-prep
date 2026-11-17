@@ -4,7 +4,7 @@
 
 ## 0. 一句话主线
 
-**CAS 是一条 CPU 原子指令（x86 的 `lock cmpxchg`）在 Java 里的封装，它用「乐观重试」替代「互斥加锁」，换来无锁、无上下文切换、无死锁，代价是自旋烧 CPU、只能保护一个变量、不保证公平、以及 ABA。**
+**<span style="color:rgb(222, 60, 54)">CAS 是一条 CPU 原子指令</span>（x86 的 `lock cmpxchg`）在 Java 里的封装，它用「乐观重试」替代「互斥加锁」，换来无锁、无上下文切换、无死锁，代价是自旋烧 CPU、只能保护一个变量、不保证公平、以及 ABA。**
 
 > 面试口径：问「CAS 是什么」，先给定义（V/A/B 三操作数），再给底层（`Unsafe.compareAndSwapInt` → JNI → `lock cmpxchg`），再主动说缺点（自旋、单变量、ABA、不公平）。主动说缺点的人，分数比只背优点的高一档。
 
@@ -67,7 +67,7 @@ AtomicInteger.incrementAndGet()
 单核时代，`cmpxchg` 本身就原子（一条指令不会被中断）。多核时代必须加 `lock` 前缀：
 
 - 早期实现：**锁总线**（assert LOCK# 信号），期间其他 CPU 无法访问内存，开销极大。
-- 现代实现：**锁缓存行**（利用 MESI 缓存一致性协议）。若目标数据已在本核 cache 且独占（M/E 态），直接锁定缓存行修改，不必锁总线；只有在跨缓存行、未缓存等少数情况才升级为锁总线。
+- 现代实现：**锁缓存行**（**利用 MESI 缓存一致性协议**）。若目标数据已在本核 cache 且独占（M/E 态），直接锁定缓存行修改，不必锁总线；只有在跨缓存行、未缓存等少数情况才升级为锁总线。
 
 所以 CAS 的开销 ≈ 一次缓存行独占权获取，在**低中度竞争**下远小于线程上下文切换。
 
@@ -84,18 +84,19 @@ AtomicInteger.incrementAndGet()
 
 ### 3.1 优点
 
-| 优点 | 说明 |
-| --- | --- |
-| 无锁 | 线程不会因竞争而挂起，也就**没有死锁**（因为根本没有锁可持有） |
-| 无上下文切换 | 竞争失败的线程只是在用户态重试，不需要陷入内核做线程切换（一次上下文切换约 1~10 微秒） |
-| 粒度小、延迟低 | 低竞争下一次 CAS 几十纳秒 |
-| 天然支持并发读 | 读线程完全无阻塞 |
+| 优点      | 说明                                             |
+| ------- | ---------------------------------------------- |
+| 无锁      | 线程不会因竞争而挂起，也就**没有死锁**（因为根本没有锁可持有）              |
+| 无上下文切换  | 竞争失败的线程只是在用户态重试，不需要陷入内核做线程切换（一次上下文切换约 1~10 微秒） |
+| 粒度小、延迟低 | **低竞争下一次 CAS 几十纳秒**                            |
+| 天然支持并发读 | 读线程完全无阻塞                                       |
 
 ### 3.2 缺点（面试必说）
 
 **① 自旋空耗 CPU。** 竞争激烈时，大量线程在 `for(;;)` 里反复 CAS 失败，CPU 占用率飙到 100%，而且**线程越多越慢**（重试成功率随并发数下降）。这是 CAS 的最大短板。
 
 **② 只能保证一个共享变量的原子操作。** `compareAndSwapInt` 一次只改一个 int。若要原子地同时改 `a` 和 `b`：
+
 - 方案一：封装成对象，用 `AtomicReference<T>`（推荐）；
 - 方案二：多个变量打包进一个 long（如 ReentrantReadWriteLock 把读写计数压进一个 int 的高低位）；
 - 方案三：直接加锁。
@@ -108,18 +109,18 @@ AtomicInteger.incrementAndGet()
 
 ## 4. 在 Java 中的应用
 
-| 应用点 | 说明 |
-| --- | --- |
-| `AtomicInteger` / `AtomicLong` / `AtomicBoolean` | 最基础的 CAS 包装，`incrementAndGet` 就是自旋 CAS |
-| `LongAdder` / `DoubleAdder` | **分段分散热点**：内部是 `Cell[]` 数组 + base，不同线程打到不同 Cell 上，求和时累加。高并发计数场景吞吐远高于 AtomicLong，代价是 `sum()` 不保证强一致 |
-| `AtomicReference` / `AtomicStampedReference` / `AtomicMarkableReference` | 把 CAS 推广到对象引用，后两者用于解 ABA |
-| `AtomicIntegerArray` / `AtomicReferenceFieldUpdater` | 数组元素、对象字段的原子更新 |
-| `ConcurrentHashMap` | bin 链表头结点插入用 `casTabAt`（基于 Unsafe）；`sizeCtl`、`transferIndex` 也靠 CAS；JDK 8 起在 bin 为空时用 CAS 插入，只有哈希冲突时才 synchronized 锁住链表头 |
-| `synchronized` 的轻量级锁 | 偏向/轻量锁升级时，用 CAS 把 Mark Word 指向线程栈中的 Lock Record；CAS 失败说明有竞争，膨胀为重量级锁 |
-| AQS 的 state | `compareAndSetState`，见 AQS 讲义 |
-| 数据库乐观锁 | `update t set stock=stock-1, version=version+1 where id=? and version=?`，把 CAS 思想搬到 SQL 层 |
+| 应用点                                                                      | 说明                                                                                                                       |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| `AtomicInteger` / `AtomicLong` / `AtomicBoolean`                         | 最基础的 CAS 包装，`incrementAndGet` 就是自旋 CAS                                                                                   |
+| `LongAdder` / `DoubleAdder`                                              | **分段分散热点**：内部是 `Cell[]` 数组 + base，不同线程打到不同 Cell 上，求和时累加。高并发计数场景吞吐远高于 AtomicLong，代价是 `sum()` 不保证强一致                       |
+| `AtomicReference` / `AtomicStampedReference` / `AtomicMarkableReference` | 把 CAS 推广到对象引用，后两者用于解 ABA                                                                                                 |
+| `AtomicIntegerArray` / `AtomicReferenceFieldUpdater`                     | 数组元素、对象字段的原子更新                                                                                                           |
+| `ConcurrentHashMap`                                                      | bin 链表头结点插入用 `casTabAt`（基于 Unsafe）；`sizeCtl`、`transferIndex` 也靠 CAS；JDK 8 起在 bin 为空时用 CAS 插入，只有哈希冲突时才 synchronized 锁住链表头 |
+| `synchronized` 的轻量级锁                                                     | 偏向/轻量锁升级时，用 CAS 把 Mark Word 指向线程栈中的 Lock Record；CAS 失败说明有竞争，膨胀为重量级锁                                                      |
+| AQS 的 state                                                              | `compareAndSetState`，见 AQS 讲义                                                                                            |
+| 数据库乐观锁                                                                   | `update t set stock=stock-1, version=version+1 where id=? and version=?`，把 CAS 思想搬到 SQL 层                                |
 
-> 面试口径：「LongAdder 为什么快？因为 AtomicLong 是所有线程 CAS 同一个变量，热点集中；LongAdder 用 Cell 数组把热点打散到多个变量上，最终 sum 时累加。典型的空间换时间 + 分散竞争。」
+> 面试口径：「LongAdder 为什么快？因为 AtomicLong 是所有线程 CAS 同一个变量，热点集中；**LongAdder 用 Cell 数组把热点打散到多个变量上，最终 sum 时累加。典型的空间换时间 + 分散竞争**。」
 
 ---
 
@@ -127,32 +128,40 @@ AtomicInteger.incrementAndGet()
 
 ### 5.1 CAS 不保证公平
 
-CAS 是**「抢」的语义**：谁先把指令执行成功谁赢，系统不记录谁先到。因此：
+CAS &#x662F;**「抢」的语义**：谁先把指令执行成功谁赢，系统不记录谁先到。因此：
 
 - 先到的线程可能连续多次 CAS 失败（每次都有别的线程抢先改成功）；
 - 后到的线程可能第一次就成功，直接插队；
 - **极端情况下某些线程长期饥饿（starvation）**，永远抢不到。
 
-这跟 AQS 的 CLH 队列锁完全相反：队列锁是「先到先服务」，CAS 是「谁手快谁得」。
+这和 AQS 的**公平锁**正好相反：公平锁是「先到先服务」，CAS 是「谁手快谁得」。要注意差别在「公平锁」这个子类，不在 AQS 本身，AQS 只是提供排队的机制，公不公平由子类的 `tryAcquire` 决定（见 5.2）。
 
 ```mermaid
 flowchart TD
-    subgraph N["非公平 CAS 争抢"]
-        N1["T1 最先发起 CAS"] -->|失败| N2["重试"]
-        N3["T2 稍后发起"] -->|第一次就成功| N4["T2 拿到资源"]
-        N2 -->|持续失败| N5["T1 饥饿, 迟迟拿不到"]
+    subgraph CAS["CAS 争抢：无排队，谁先写进去谁赢"]
+        C1["T1 读到值 v"] --> C2["CAS(v, v+1)"]
+        C2 --> C3{"值仍是 v ?"}
+        C3 -->|"是"| C4["T1 写入成功"]
+        C3 -->|"否，已被别人改掉"| C5["T1 重新读值再试"]
+        C5 --> C2
+        C5 -.->|"可以无限循环"| C6["没有任何机制保证 T1 下次能赢"]
     end
-    subgraph F["公平队列锁 AQS"]
-        F1["T1 入队"] --> F2["T2 入队"]
-        F2 --> F3["T3 入队"]
-        F3 --> F4["严格按队列顺序, 只有队首能抢"]
-        F4 --> F5["T1 先获得"]
+
+    subgraph FAIR["AQS 公平锁：先排号，再按顺序放行"]
+        F1["T1 抢锁失败，入队成为 head 的后继"] --> F2["T2、T3 依次入队"]
+        F2 --> F3["head 释放，唤醒 T1"]
+        F3 --> F4{"前驱是 head 且前面没人排着 ?"}
+        F4 -->|"是"| F5["T1 CAS 成功，setHead 上位"]
+        F4 -->|"否"| F6["继续 park"]
+        F6 --> F3
     end
 ```
 
+图上右侧那一半是**公平模式**。非公平模式（`ReentrantLock` 默认）下，新线程调 `lock()` 的第一句就是直接 CAS，成功即插队，队列里排着的人照样可能等很久。所以准确说法是：**AQS 只提供排队机制，公平与否由子类决定**。
+
 ### 5.2 工程应对（4 种，面试按此顺序答）
 
-**① 需要公平就用 AQS 的公平锁。**
+**① 需要公平就用 AQS 的公平锁。**  
 `new ReentrantLock(true)`。源码上公平锁与非公平锁的差异就在 `tryAcquire` 里多了一个 `hasQueuedPredecessors()` 判断：
 
 ```java
@@ -174,7 +183,7 @@ protected final boolean tryAcquire(int acquires) {
 
 非公平锁（NonfairSync）会先无脑 CAS 一次，成功了就插队，失败了才走 `acquire()` 入队。所以**默认非公平是有道理的**：公平锁吞吐明显更低（每次都要遍历判断队列），但能保证不饥饿。
 
-**② 自旋失败后退避（yield / 指数退避）。**
+**② 自旋失败后退避（yield / 指数退避）。**  
 让抢失败的线程让出 CPU，降低无效重试：
 
 ```java
@@ -276,12 +285,13 @@ sequenceDiagram
 
 > **CAS 成功之后，代码是否依赖了「除了那个被比较的值以外」的信息？**
 
-| 场景 | CAS 成功后依赖什么 | ABA 有害吗 |
-| --- | --- | --- |
-| `AtomicInteger.incrementAndGet()` 计数 | 只依赖最终数值本身 | **无害**。值从 5 变 6 再变回 5，再自增成 6，结果依然正确 |
-| 无锁栈/队列的 `pop`（Treiber Stack） | 依赖 `next` 指针指向的结构 | **有害**。值（head 引用）相同，但链表结构已变，会丢元素或断链 |
-| 账户扣款 / 库存扣减 | 依赖"中间没人操作过"这一业务语义 | **有害**。退款被无声吞掉、超卖 |
-| 状态机流转（待支付→已取消→待支付） | 依赖状态没被绕一圈 | **有害**。绕回同一状态意味着中间发生过非法流转 |
+| 场景                                   | CAS 成功后依赖什么       | ABA 有害吗                             |
+| ------------------------------------ | ----------------- | ----------------------------------- |
+| `AtomicInteger.incrementAndGet()` 计数 | 只依赖最终数值本身         | **无害**。值从 5 变 6 再变回 5，再自增成 6，结果依然正确 |
+| 无锁栈/队列的 `pop`（Treiber Stack）         | 依赖 `next` 指针指向的结构 | **有害**。值（head 引用）相同，但链表结构已变，会丢元素或断链 |
+| 账户扣款 / 库存扣减                          | 依赖"中间没人操作过"这一业务语义 | **有害**。退款被无声吞掉、超卖                   |
+| 状态机流转（待支付→已取消→待支付）                   | 依赖状态没被绕一圈         | **有害**。绕回同一状态意味着中间发生过非法流转           |
+
 
 **记忆方法**：「**只算数的不怕，动结构/动业务的怕**」。纯计数器只需最终值对；一旦 CAS 成功后还要去读指针、判断业务状态，值相同就不足以证明"没人动过"。
 
@@ -293,13 +303,13 @@ sequenceDiagram
 
 ### 7.1 方案对比
 
-| 方案 | 做法 | 适用场景 |
-| --- | --- | --- |
-| `AtomicStampedReference<V>` | 值 + int 版本戳，值每变一次戳递增，CAS 同时比较值和戳 | 需要知道"变过几次"，通用解 |
-| `AtomicMarkableReference<V>` | 值 + boolean 标记，只关心"是否被改过" | 只需判断是否被改过，不关心次数（如 GC 标记、节点删除标记） |
-| 数据库 `version` 字段 / 时间戳 | `where id=? and version=?`，更新时 `version+1` | 持久层乐观锁 |
-| 悲观锁 | `synchronized` / `ReentrantLock` | 简单粗暴，竞争不高时成本可接受 |
-| 不可变对象 | 每次变更 new 新对象，引用即版本 | 函数式风格，配合 AtomicReference |
+| 方案                           | 做法                                         | 适用场景                            |
+| ---------------------------- | ------------------------------------------ | ------------------------------- |
+| `AtomicStampedReference<V>`  | 值 + int 版本戳，值每变一次戳递增，CAS 同时比较值和戳           | 需要知道"变过几次"，通用解                  |
+| `AtomicMarkableReference<V>` | 值 + boolean 标记，只关心"是否被改过"                  | 只需判断是否被改过，不关心次数（如 GC 标记、节点删除标记） |
+| 数据库 `version` 字段 / 时间戳       | `where id=? and version=?`，更新时 `version+1` | 持久层乐观锁                          |
+| 悲观锁                          | `synchronized` / `ReentrantLock`           | 简单粗暴，竞争不高时成本可接受                 |
+| 不可变对象                        | 每次变更 new 新对象，引用即版本                         | 函数式风格，配合 AtomicReference        |
 
 ### 7.2 `AtomicStampedReference` 完整示例（复现 + 修复对照）
 
@@ -367,7 +377,7 @@ ref.compareAndSet(期望值, 新值, 期望戳, 新戳);  // 值和戳同时匹�
 ref.attemptStamp(期望值, 新戳);                // 只改戳（值未变时）
 ```
 
-> 面试口径：「AtomicStampedReference 的三个坑（详见 §7.4、§7.5）：① 底层是把值和戳打包成不可变 Pair，CAS 的是这个 Pair 引用，所以能"同时"比较；② `getReference()` 和 `getStamp()` 是两次独立读，可能拿到不配套的组合，要用 `get(int[] stampHolder)` 一次读；③ 它比较的是**引用**（`==`）不是 `equals`，包装类型要注意 Integer 缓存陷阱（-128~127），不要用 `new Integer` 或超出缓存范围的值做 CAS，否则引用不相等导致永远失败。」
+> 面试口径：「AtomicStampedReference 的三个坑（详见 §7.4、§7.5）：① 底层是&#x628A;**<u>值和戳打包成不可变 Pair，CAS 的是这个 Pair 引用</u>**，所以能"同时"比较；② `getReference()` 和 `getStamp()` 是两次独立读，可能拿到不配套的组合，要用 `get(int[] stampHolder)` 一次读；③ 它比较的是**引用**（`==`）不是 `equals`，包装类型要注意 Integer 缓存陷阱（-128~127），不要用 `new Integer` 或超出缓存范围的值做 CAS，否则引用不相等导致永远失败。」
 
 ### 7.3 `AtomicMarkableReference` 的最小示例
 
@@ -432,7 +442,7 @@ public class AtomicStampedReference<V> {
 
 **坑 1：`getReference()` + `getStamp()` 是两次独立读，拿到的可能不是配套的组合**
 
-<span style="color:red">**`getReference()` 和 `getStamp()` 各自读一次 `pair`，两次读之间值可能已经被别人改掉。** 如果你读到之后还要基于它做判断或计算，就可能基于一个"从未真实存在过"的组合做决策。正确做法是用 `get(int[] stampHolder)` —— 它只读一次 `pair`，返回配套的值和戳。</span>
+<span style="color:rgb(222, 60, 54)">**`getReference()` 和 `getStamp()` 各自读一次 `pair`，两次读之间值可能已经被别人改掉。** 如果你读到之后还要基于它做判断或计算，就可能基于一个"从未真实存在过"的组合做决策。正确做法是用 `get(int[] stampHolder)` —— 它只读一次 `pair`，返回配套的值和戳。</span>
 
 ```java
 // ❌ 不推荐：两次独立读，中间可能被改
@@ -450,7 +460,7 @@ int stamp = stampHolder[0];        // value 与 stamp 一定配套
 
 **坑 2：版本戳是 `int`，理论上会回绕**
 
-`int` 只有 21 亿，超过就绕回负数。同一个引用被改 21 亿次在实践中几乎不可能达到（按每秒 100 万次修改算要约 35 分钟，实际业务远达不到这个速率），所以**工程上不用担心**。但面试若被追问"版本戳会不会溢出"，答「会回绕，但需要同一位置被修改 21 亿次，实际业务达不到；真要彻底规避可以用更长的戳或时间戳」。
+`int` 只有 21 亿，超过就绕回负数。同一个引用被改 21 亿次在实践中几乎不可能达到（按每秒 100 万次修改算要约 35 分钟，实际业务远达不到这个速率），所以**工程上不用担心**。但面试若被追问"版本戳会不会溢出"，答「**会回绕，但需要同一位置被修改 21 亿次**，实际业务达不到；真要彻底规避可以用更长的戳或时间戳」。
 
 **坑 3（附）：它比较的是引用（`==`），不是 `equals`**
 
@@ -495,55 +505,56 @@ public class LongAdderCompareDemo {
 }
 ```
 
-在 50 线程 × 20 万次的场景下，LongAdder 通常比 AtomicLong 快数倍。原因：AtomicLong 是 50 个线程 CAS 同一个变量，失败率极高；LongAdder 内部 `Cell[]` 按线程哈希分散，冲突概率大幅下降。
+在 50 线程 × 20 万次的场景下，**LongAdder 通常比 AtomicLong 快数倍**。原因：AtomicLong 是 50 个线程 CAS 同一个变量，失败率极高；**LongAdder 内部 `Cell[]` 按线程哈希分散，冲突概率大幅下降**。
 
 **取舍**：LongAdder 的 `sum()` 在并发更新下**不是强一致的快照**（累加过程中可能有 Cell 正在变），所以只适合统计类场景（QPS、计数），**不能**用来做需要精确值的状态机或幂等判断。
 
 ---
 
+
 ## 9. 追问链 · 参考答案
 
-| 层级 | 问题 | 参考答案要点 |
-| --- | --- | --- |
-| L1 | CAS 的三个操作数是什么？为什么「比较 + 交换」必须是原子的？ | 三个操作数：V（内存地址）、A（预期原值）、B（新值），语义是当且仅当 V 当前值等于 A 才改成 B。比较和交换必须在硬件层面不可分割，否则两步之间插入其他线程的修改就会导致判断失效、出现丢失更新——正是原子性让 CAS 能作为同步原语，x86 上对应指令是 lock cmpxchg。 |
-| L1 | Java 里 CAS 的调用链从 AtomicInteger 到 CPU 指令是怎么走的？ | 调用链：AtomicInteger.incrementAndGet → Unsafe.getAndAddInt（自旋循环里调 compareAndSwapInt）→ JNI 层 HotSpot 的 unsafe.cpp → Atomic::cmpxchg → CPU 指令 lock cmpxchg（x86）。其中 getAndAddInt 的自旋是 JDK 9 之前 AtomicInteger 重试的实现方式，整条链路说明 CAS 是 CPU 原子指令在 Java 层的封装。 |
-| L1 | `lock` 前缀在多核 CPU 上是锁总线还是锁缓存行？ | 现代 CPU 上是锁缓存行：若目标数据在本核 cache 且处于 MESI 协议的 M/E 独占态，直接锁定该缓存行完成修改，不需要锁总线；只有跨缓存行或未命中缓存等少数情况才升级为锁总线（早期实现全靠拉低 LOCK# 信号锁总线，开销极大）。所以 CAS 开销约等于一次缓存行独占权获取。 |
-| L2 | CAS 相比 synchronized 的优缺点各三条？ | 优点：无锁无死锁（没有锁可持有）、竞争失败只在用户态重试、无上下文切换（一次切换约 1~10 微秒）、低竞争下延迟几十纳秒。缺点：高竞争时自旋重试烧 CPU 且吞吐不升反降、一次只能原子保护一个变量、存在 ABA 问题、不保证公平。synchronized 则在 JDK 6 后靠锁升级（偏向/轻量/重量级）自适应竞争强度。 |
-| L2 | 为什么 CAS 只能保证一个共享变量的原子性？要原子改两个变量怎么办？ | 因为 cmpxchg 指令一次只比较交换一个内存字，compareAndSwapInt 只能改一个 int。要原子改两个变量有三条路：① 把多个字段封装成对象，用 AtomicReference 整体替换引用；② 把多个值打包进一个 long/int 的高低 32/16 位（ReentrantReadWriteLock 就是这么压读写计数的）；③ 直接加锁。 |
-| L2 | 高并发下 CAS 会导致什么现象？线上怎么判断是 CAS 自旋导致的 CPU 飙高？ | 现象是大量线程在 for(;;) 里反复 CAS 失败，CPU 占用 100%、load 高但吞吐低，线程越多越慢。排查：jstack 多次采样发现大量线程 RUNNABLE 且栈顶停在 AtomicInteger/Unsafe 相关方法（注意是 RUNNABLE 而非 park 的 WAITING）；perf/async-profiler 火焰图热点集中在自旋循环；确认后可换 LongAdder 分散热点。 |
-| L3 | CAS 为什么不保证公平？举个饥饿的例子。 | CAS 是"抢"的语义：系统不记录线程到达顺序，谁先把指令执行成功谁赢。饥饿例子：T1 最先发起 CAS，但每次重试间隙都有新线程抢先成功，T1 连续失败几十次迟迟拿不到资源，而后到的 T2 第一次就成功插队。这与 AQS 队列锁的"先到先服务"完全相反，极端下某些线程会长期饥饿（starvation）。 |
-| L3 | 想要公平有哪几种工程做法？各自代价是什么？ | 四种：① 用 AQS 公平锁 new ReentrantLock(true)，代价是吞吐明显下降（每次要查队列）；② 自旋失败后退避（Thread.yield 或 parkNanos 随机指数退避），代价是延迟略增；③ LongAdder 分散热点降低竞争强度，代价是 sum() 弱一致；④ 限制自旋次数后升级重量级锁，代价是实现复杂——synchronized 的锁升级就是这套组合。 |
-| L3 | ReentrantLock 公平锁和非公平锁在源码上的唯一区别是什么？为什么默认非公平？ | 唯一区别：FairSync.tryAcquire 在 compareAndSetState 之前多了 hasQueuedPredecessors() 判断，队列里有人排在自己前面就放弃抢锁直接入队；NonfairSync 则先无脑 CAS 一次，成功即插队。默认非公平是因为公平锁吞吐低得多——刚唤醒的线程还要经历 park/unpark 切换，而非公平让刚释放锁的线程附近的新线程直接抢，减少上下文切换。 |
-| L3 | synchronized 的锁升级过程如何体现「CAS + 兜底排队」的思想？ | 升级链：偏向锁 → 轻量级锁 → 重量级锁。轻量级锁用 CAS 把 Mark Word 替换为指向线程栈 Lock Record 的指针，成功即拿锁；CAS 失败说明有竞争，先自旋（默认约 10 次，自适应自旋会动态调整），自旋仍失败才膨胀为重量级锁（monitor，线程 park 排队）。JVM 正是用"有限次 CAS + 兜底排队"同时拿到无锁的快和有锁的公平。注意 JDK 15 起偏向锁默认关闭（JEP 374），JDK 18 移除。 |
-| L4 | 什么是 ABA 问题？为什么说它本质上是「值相等 ≠ 语义未变」？ | ABA：T1 读到值 A 准备 CAS(A,B)，期间 T2 把值改成 B 又改回 A，T1 的 CAS 因当前值等于预期值而成功，但中间状态确实变过。本质是 CAS 只比较"值是否相等"，无法感知"中间是否发生过变化"——对于无锁栈、链表这类结构，值相同不代表指针拓扑相同，也不代表业务语义没变，所以相等不等于安全。 |
-| L4 | 给出三个真实的 ABA 场景（无锁栈、账户、库存/DB 乐观锁）。 | ① 无锁栈 pop：栈顶 A→B→A，CAS 判 head 仍是 A 而成功 pop，但 next 指针已指向旧结构，导致元素丢失或链表断裂；② 账户余额：100→50（扣款）→100（退款），T1 的 CAS(100,80) 成功，退款被无声吞掉；③ DB 乐观锁：库存改了又改回，where stock=旧值 命中造成超卖——必须带 version 字段而非直接比业务值。 |
-| L4 | AtomicStampedReference 和 AtomicMarkableReference 的区别？分别什么时候用？ | AtomicStampedReference 是"值 + int 版本戳"，每次修改戳递增，CAS 同时比较值和戳，能知道"变过几次"，是 ABA 通用解；AtomicMarkableReference 是"值 + boolean 标记"，只关心"是否被改过"，不关心次数，适合 GC 标记、节点逻辑删除标记这类二元状态场景。判断依据：需要区分变化次数就用前者，只需是否变过就用后者。 |
-| L4 | AtomicStampedReference 用 Integer 做 value 有什么坑？（Integer 缓存 + 引用比较） | 坑在于它的 CAS 比较的是引用（==）而非 equals，而 Integer 对 -128~127 有缓存：范围内 valueOf 返回同一对象所以侥幸成功，超出范围每次装箱都是新对象，导致"值明明相等 CAS 却永远失败"。正确做法：要么全程持有同一个对象引用做 CAS，要么改用自定义不可变类，避免依赖包装类型的缓存行为。 |
-| L4 | `AtomicStampedReference` 底层是怎么做到"同时"比较值和戳的？ | 它没有两个字段，只有一个 `private volatile Pair<V> pair`——值和戳被打包成一个不可变 Pair 对象，`compareAndSet` 先比 reference 和 stamp，最后 `compareAndSwapObject(this, pairOffset, cmp, val)` **CAS 的是整个 Pair 的引用**。所以"同时"的本质是：任一字段变化就生成新 Pair，旧引用自然不相等。这个"多字段打包成不可变对象、一次 CAS 换整个对象"的手法在 AQS 的 Node、ConcurrentHashMap 的 Node 上都用到。 |
-| L5 | `getReference()` 和 `getStamp()` 能直接用吗？为什么 javadoc 推荐 `get(int[] stampHolder)`？ | <span style="color:red">**不能随意用**。这两个方法是各自独立读一次 `pair`，两次读之间值可能已被其他线程改掉，**你拿到的 value 和 stamp 可能不属于同一个 Pair，这个组合从未真实存在过**。</span>如果读到之后还要做判断或计算，就会基于不一致的快照决策。正确做法是 `int[] h = new int[1]; Integer v = ref.get(h); int stamp = h[0];` —— 只读一次 pair，保证两者配套。Oracle javadoc 里就明确推荐这个用法。 |
-| L5 | 是不是所有 CAS 都必须处理 ABA？ | 不是，判据是「**CAS 成功之后，代码是否依赖了值以外的信息**」。只算数的场景 ABA 无害：`AtomicInteger.incrementAndGet()` 只关心最终数值，值从 5 变 6 再变回 5 再自增成 6，结果依然正确。而基于引用的无锁结构（Treiber 栈、ConcurrentLinkedQueue）和"改了又改回来"的业务场景（退款、回滚、状态流转）依赖值以外的结构或语义，必须处理。口诀：**只算数的不怕，动结构/动业务的怕**。 |
-| L5 | LongAdder 为什么比 AtomicLong 快？它的 sum() 有什么语义缺陷？什么场景不能用？ | 快的原因：AtomicLong 是所有线程 CAS 同一个变量，热点集中失败率高；LongAdder 内部是 base + Cell[] 数组，线程按哈希分散到不同 Cell 上累加，冲突概率大幅下降，典型场景下快数倍。缺陷：sum() 是逐个累加 Cell，过程中可能有 Cell 正在被更新，不是强一致快照。所以只用于 QPS 统计等计数场景，不能用于需要精确值的状态机、限流器、幂等判断。 |
-| L5 | 数据库的乐观锁怎么写才不会有 ABA 问题？ | 必须带版本字段而不是直接比业务值：update t set stock=stock-1, version=version+1 where id=? and version=?，用读时拿到的 version 做匹配条件，更新成功即影响行数为 1，失败则重读重试。若写成 where stock=100 直接比业务值，库存改了又改回来时就会命中旧值导致超卖——这正是数据库层面的 ABA，version 等价于 AtomicStampedReference 的版本戳。 |
-| L5 | ConcurrentHashMap 里哪些地方用了 CAS？为什么 JDK 8 不全程用 CAS 而是部分用 synchronized？ | JDK 8 的 ConcurrentHashMap 用 CAS 的地方：casTabAt 做空桶插入、sizeCtl 初始化和扩容标志、transferIndex 扩容任务划分、addCount 计数。但桶内已有节点（哈希冲突）时用 synchronized 锁住链表/红黑树头节点再插入，因为桶内修改涉及多步指针操作，CAS 只能保护单变量无法保证复合操作原子性，且 synchronized 已优化到竞争低时很轻量。 |
-| L5 | 生产上一个接口 QPS 上不去、CPU 100%，排查发现是 AtomicInteger 热点计数，你怎么优化？ | 这是典型的 CAS 热点竞争：所有线程自旋抢同一个变量。优化：① 首选换 LongAdder，Cell[] 分散热点，sum() 弱一致对统计场景可接受；② 若必须强一致，做分片计数（按线程/时段拆多个计数器再汇总）；③ 降低采样粒度，改为批量累加（本地计数后定时 flush）。验证：优化后压测 CPU 应从 100% 下降且 TPS 提升，火焰图中 Unsafe 热点消失。 |
-| L5 | CAS 的「虚假失败」是怎么回事？哪些 CPU 架构上会出现？（提示：ARM 的 LL/SC） | 虚假失败指值实际没被改过、CAS 却返回失败。ARM 用的是 LL/SC（Load-Link/Store-Conditional，LDREX/STREX）而非真正的 cmpxchg：LL 标记监控内存，SC 时只要监控因任何原因失效（包括中断、缓存行被抢占等）就失败，即使值没变。所以 HotSpot 在 ARM 上必须把 CAS 包在循环里重试；x86 的 lock cmpxchg 无此问题。 |
+| 层级 | 问题                                                                             | 参考答案要点                                                                                                                                                                                                                                                                                             |
+| -- | ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| L1 | CAS 的三个操作数是什么？为什么「比较 + 交换」必须是原子的？                                              | 三个操作数：V（内存地址）、A（预期原值）、B（新值），语义是当且仅当 V 当前值等于 A 才改成 B。比较和交换必须在硬件层面不可分割，否则两步之间插入其他线程的修改就会导致判断失效、出现丢失更新——正是原子性让 CAS 能作为同步原语，x86 上对应指令是 lock cmpxchg。                                                                                                                                                   |
+| L1 | Java 里 CAS 的调用链从 AtomicInteger 到 CPU 指令是怎么走的？                                  | 调用链：AtomicInteger.incrementAndGet → Unsafe.getAndAddIn&#x74;**（自旋循环里调 compareAndSwapInt）**→ JNI 层 HotSpot 的 unsafe.cpp → Atomic::cmpxchg → **CPU 指令 lock cmpxchg**（x86）。其中 getAndAddInt 的自旋是 JDK 9 之前 AtomicInteger 重试的实现方式，整条链路说明 **CAS 是 CPU 原子指令在 Java 层的封装**。                                  |
+| L1 | `lock` 前缀在多核 CPU 上是锁总线还是锁缓存行？                                                  | **现代 CPU 上是锁缓存行**：若目标数据在本核 cache 且处于 MESI 协议的 M/E 独占态，直接锁定该缓存行完成修改，不需要锁总线；只有跨缓存行或未命中缓存等少数情况才升级为锁总线（早期实现全靠拉低 LOCK# 信号锁总线，开销极大）。所以 CAS 开销约等于一次缓存行独占权获取。                                                                                                                                              |
+| L2 | CAS 相比 synchronized 的优缺点各三条？                                                   | 优点：无锁无死锁（没有锁可持有）、竞争失败只在用户态重试、无上下文切换（一次切换约 1~10 微秒）、低竞争下延迟几十纳秒。缺点：高竞争时自旋重试烧 CPU 且吞吐不升反降、一次只能原子保护一个变量、存在 ABA 问题、不保证公平。synchronized 则在 JDK 6 后靠锁升级（偏向/轻量/重量级）自适应竞争强度。                                                                                                                                 |
+| L2 | 为什么 CAS 只能保证一个共享变量的原子性？要原子改两个变量怎么办？                                            | 因为 cmpxchg 指令一次只比较交换一个内存字，compareAndSwapInt 只能改一个 int。要原子改两个变量有三条路：① 把多个字段封装成对象，用 AtomicReference 整体替换引用；② 把多个值打包进一个 long/int 的高低 32/16 位（ReentrantReadWriteLock 就是这么压读写计数的）；③ 直接加锁。                                                                                                               |
+| L2 | 高并发下 CAS 会导致什么现象？线上怎么判断是 CAS 自旋导致的 CPU 飙高？                                     | 现象是大量线程在 for(;;) 里反复 CAS 失败，CPU 占用 100%、load 高但吞吐低，线程越多越慢。排查：jstack 多次采样发现大量线程 RUNNABLE 且栈顶停在 AtomicInteger/Unsafe 相关方法（注意是 RUNNABLE 而非 park 的 WAITING）；perf/async-profiler 火焰图热点集中在自旋循环；确认后可换 LongAdder 分散热点。                                                                                     |
+| L3 | CAS 为什么不保证公平？举个饥饿的例子。                                                          | CAS 是"抢"的语义：系统不记录线程到达顺序，谁先把指令执行成功谁赢。饥饿例子：T1 最先发起 CAS，但每次重试间隙都有新线程抢先成功，T1 连续失败几十次迟迟拿不到资源，而后到的 T2 第一次就成功插队。这与 AQS 队列锁的"先到先服务"完全相反，极端下某些线程会长期饥饿（starvation）。                                                                                                                                          |
+| L3 | 想要公平有哪几种工程做法？各自代价是什么？                                                          | 四种：① 用 AQS 公平锁 new ReentrantLock(true)，代价是吞吐明显下降（每次要查队列）；② 自旋失败后退避（Thread.yield 或 parkNanos 随机指数退避），代价是延迟略增；③ LongAdder 分散热点降低竞争强度，代价是 sum() 弱一致；④ 限制自旋次数后升级重量级锁，代价是实现复杂——synchronized 的锁升级就是这套组合。                                                                                                 |
+| L3 | ReentrantLock 公平锁和非公平锁在源码上的唯一区别是什么？为什么默认非公平？                                   | 唯一区别：FairSync.tryAcquire 在 compareAndSetState 之前多了 hasQueuedPredecessors() 判断，队列里有人排在自己前面就放弃抢锁直接入队；NonfairSync 则先无脑 CAS 一次，成功即插队。默认非公平是因为公平锁吞吐低得多——刚唤醒的线程还要经历 park/unpark 切换，而非公平让刚释放锁的线程附近的新线程直接抢，减少上下文切换。                                                                                        |
+| L3 | synchronized 的锁升级过程如何体现「CAS + 兜底排队」的思想？                                        | 升级链：偏向锁 → 轻量级锁 → 重量级锁。轻量级锁用 CAS 把 Mark Word 替换为指向线程栈 Lock Record 的指针，成功即拿锁；CAS 失败说明有竞争，先自旋（默认约 10 次，自适应自旋会动态调整），自旋仍失败才膨胀为重量级锁（monitor，线程 park 排队）。JVM 正是用"有限次 CAS + 兜底排队"同时拿到无锁的快和有锁的公平。注意 JDK 15 起偏向锁默认关闭（JEP 374），JDK 18 移除。                                                                     |
+| L4 | 什么是 ABA 问题？为什么说它本质上是「值相等 ≠ 语义未变」？                                              | ABA：T1 读到值 A 准备 CAS(A,B)，期间 T2 把值改成 B 又改回 A，T1 的 CAS 因当前值等于预期值而成功，但中间状态确实变过。本质是 CAS 只比较"值是否相等"，无法感知"中间是否发生过变化"——对于无锁栈、链表这类结构，值相同不代表指针拓扑相同，也不代表业务语义没变，所以相等不等于安全。                                                                                                                                    |
+| L4 | 给出三个真实的 ABA 场景（无锁栈、账户、库存/DB 乐观锁）。                                              | ① 无锁栈 pop：栈顶 A→B→A，CAS 判 head 仍是 A 而成功 pop，但 next 指针已指向旧结构，导致元素丢失或链表断裂；② 账户余额：100→50（扣款）→100（退款），T1 的 CAS(100,80) 成功，退款被无声吞掉；③ DB 乐观锁：库存改了又改回，where stock=旧值 命中造成超卖——必须带 version 字段而非直接比业务值。                                                                                                       |
+| L4 | AtomicStampedReference 和 AtomicMarkableReference 的区别？分别什么时候用？                  | AtomicStampedReference 是"值 + int 版本戳"，每次修改戳递增，CAS 同时比较值和戳，能知道"变过几次"，是 ABA 通用解；AtomicMarkableReference 是"值 + boolean 标记"，只关心"是否被改过"，不关心次数，适合 GC 标记、节点逻辑删除标记这类二元状态场景。判断依据：需要区分变化次数就用前者，只需是否变过就用后者。                                                                                                   |
+| L4 | AtomicStampedReference 用 Integer 做 value 有什么坑？（Integer 缓存 + 引用比较）              | 坑在于它的 CAS 比较的是引用（==）而非 equals，而 Integer 对 -128~127 有缓存：范围内 valueOf 返回同一对象所以侥幸成功，超出范围每次装箱都是新对象，导致"值明明相等 CAS 却永远失败"。正确做法：要么全程持有同一个对象引用做 CAS，要么改用自定义不可变类，避免依赖包装类型的缓存行为。                                                                                                                               |
+| L4 | `AtomicStampedReference` 底层是怎么做到"同时"比较值和戳的？                                    | 它没有两个字段，只有一个 `private volatile Pair<V> pair`——值和戳被打包成一个不可变 Pair 对象，`compareAndSet` 先比 reference 和 stamp，最后 `compareAndSwapObject(this, pairOffset, cmp, val)` **CAS 的是整个 Pair 的引用**。所以"同时"的本质是：任一字段变化就生成新 Pair，旧引用自然不相等。这个"多字段打包成不可变对象、一次 CAS 换整个对象"的手法在 AQS 的 Node、ConcurrentHashMap 的 Node 上都用到。 |
+| L5 | `getReference()` 和 `getStamp()` 能直接用吗？为什么 javadoc 推荐 `get(int[] stampHolder)`？ | <span style="color:rgb(222, 60, 54)">**不能随意用**。这两个方法是各自独立读一次 `pair`，两次读之间值可能已被其他线程改掉，**你拿到的 value 和 stamp 可能不属于同一个 Pair，这个组合从未真实存在过**。</span>如果读到之后还要做判断或计算，就会基于不一致的快照决策。正确做法是 `int[] h = new int[1]; Integer v = ref.get(h); int stamp = h[0];` —— 只读一次 pair，保证两者配套。Oracle javadoc 里就明确推荐这个用法。    |
+| L5 | 是不是所有 CAS 都必须处理 ABA？                                                           | 不是，判据是「**CAS 成功之后，代码是否依赖了值以外的信息**」。只算数的场景 ABA 无害：`AtomicInteger.incrementAndGet()` 只关心最终数值，值从 5 变 6 再变回 5 再自增成 6，结果依然正确。而基于引用的无锁结构（Treiber 栈、ConcurrentLinkedQueue）和"改了又改回来"的业务场景（退款、回滚、状态流转）依赖值以外的结构或语义，必须处理。口诀：**只算数的不怕，动结构/动业务的怕**。                                                             |
+| L5 | LongAdder 为什么比 AtomicLong 快？它的 sum() 有什么语义缺陷？什么场景不能用？                          | 快的原因：AtomicLong 是所有线程 CAS 同一个变量，热点集中失败率高；LongAdder 内部是 base + Cell[] 数组，线程按哈希分散到不同 Cell 上累加，冲突概率大幅下降，典型场景下快数倍。缺陷：sum() 是逐个累加 Cell，过程中可能有 Cell 正在被更新，不是强一致快照。所以只用于 QPS 统计等计数场景，不能用于需要精确值的状态机、限流器、幂等判断。                                                                                              |
+| L5 | 数据库的乐观锁怎么写才不会有 ABA 问题？                                                         | 必须带版本字段而不是直接比业务值：update t set stock=stock-1, version=version+1 where id=? and version=?，用读时拿到的 version 做匹配条件，更新成功即影响行数为 1，失败则重读重试。若写成 where stock=100 直接比业务值，库存改了又改回来时就会命中旧值导致超卖——这正是数据库层面的 ABA，version 等价于 AtomicStampedReference 的版本戳。                                                           |
+| L5 | ConcurrentHashMap 里哪些地方用了 CAS？为什么 JDK 8 不全程用 CAS 而是部分用 synchronized？           | JDK 8 的 ConcurrentHashMap 用 CAS 的地方：casTabAt 做空桶插入、sizeCtl 初始化和扩容标志、transferIndex 扩容任务划分、addCount 计数。但桶内已有节点（哈希冲突）时用 synchronized 锁住链表/红黑树头节点再插入，因为桶内修改涉及多步指针操作，CAS 只能保护单变量无法保证复合操作原子性，且 synchronized 已优化到竞争低时很轻量。                                                                                 |
+| L5 | 生产上一个接口 QPS 上不去、CPU 100%，排查发现是 AtomicInteger 热点计数，你怎么优化？                       | 这是典型的 CAS 热点竞争：所有线程自旋抢同一个变量。优化：① 首选换 LongAdder，Cell[] 分散热点，sum() 弱一致对统计场景可接受；② 若必须强一致，做分片计数（按线程/时段拆多个计数器再汇总）；③ 降低采样粒度，改为批量累加（本地计数后定时 flush）。验证：优化后压测 CPU 应从 100% 下降且 TPS 提升，火焰图中 Unsafe 热点消失。                                                                                                      |
+| L5 | CAS 的「虚假失败」是怎么回事？哪些 CPU 架构上会出现？（提示：ARM 的 LL/SC）                                | 虚假失败指值实际没被改过、CAS 却返回失败。ARM 用的是 LL/SC（Load-Link/Store-Conditional，LDREX/STREX）而非真正的 cmpxchg：LL 标记监控内存，SC 时只要监控因任何原因失效（包括中断、缓存行被抢占等）就失败，即使值没变。所以 HotSpot 在 ARM 上必须把 CAS 包在循环里重试；x86 的 lock cmpxchg 无此问题。                                                                                             |
 
 ---
 
 ## 10. 误区 · 正解
 
-| ❌ 误区 | ✅ 正解 |
-| --- | --- |
-| 「CAS 是无锁的，所以一定比加锁快」 | 只在低竞争下成立。高竞争时大量线程自旋重试、失败率随并发数上升，CAS 吞吐反而低于阻塞锁且烧 CPU，典型现象是压测 TPS 不涨反降。是否用 CAS 取决于竞争强度：低竞争用 CAS，高竞争考虑 LongAdder 分散热点或带兜底排队的锁（synchronized 锁升级就是这套思路）。 |
-| 「CAS 不会发生死锁，所以它就是安全的」 | 对死锁免疫不等于没有问题。CAS 因为没有锁可持有所以不会死锁，但其余短板仍在：ABA 会吞掉中间变更、高竞争自旋耗 CPU、一次只能保护一个变量、不保证公平可能饥饿。评估 CAS 方案要把这四条一起纳入，而不是只拿"无死锁"当安全凭证。 |
-| 「AtomicInteger 能原子地更新多个变量」 | 不能，它只保护自己那一个 int，compareAndSwapInt 一次只操作一个内存字。要原子改多个变量：封装成对象用 AtomicReference 整体换引用；或把多个值打包进一个 long 的高低 32 位（ReentrantReadWriteLock 对读写计数的做法）；或直接加锁保护复合操作。 |
-| 「ABA 问题在业务系统里很少见，不用管」 | 账户余额、库存、订单状态机这类"值会来回变"的场景天然是 ABA 温床：只要存在退款、回滚、撤销等"改了又改回来"的业务路径，只比值的 CAS 就可能吞掉中间变更。正确做法是加版本戳——Java 层用 AtomicStampedReference，数据库乐观锁用 version 字段，绝不要直接比对业务值。 |
-| 「用 AtomicStampedReference 包装 Integer 就万事大吉」 | 版本戳解的是 ABA，但它比较值时用 == 比较引用而非 equals：Integer 只对 -128~127 缓存，超出范围 Integer.valueOf(1000) 每次返回新对象，CAS 会因引用不等而永远失败。规避方式：全程持有同一对象引用做 CAS，或改用自定义不可变类，不要依赖包装类型缓存。 |
-| 「`getReference()` 再 `getStamp()` 读出来就能做判断」 | <span style="color:red">这两个方法各自独立读一次 `pair`，两次读之间值可能被改，**拿到的 value 和 stamp 可能不配套，这个组合从未真实存在过**。</span>基于它做判断或计算就是基于错误快照。正确用法是 `int[] h = new int[1]; Integer v = ref.get(h); int stamp = h[0];`——一次读，保证配套（Oracle javadoc 的推荐用法）。 |
-| 「CAS 成功后还需要读别的字段，这跟 ABA 无关」 | 恰恰相反，这正是 ABA 有害的原因。CAS 只保证"被比较的那个值没变"，不保证"值以外的信息没变"。无锁栈里 head 引用相同但 next 指针已指向别的结构，退款场景里余额相同但中间发生过扣款，都是"值对了、上下文错了"。所以判断要不要防 ABA，就看 CAS 成功后是否依赖值以外的信息。 |
-| 「LongAdder 可以完全替代 AtomicLong」 | 不能。LongAdder 的 sum() 是逐个累加 Cell 的结果，并发更新过程中读到的不是强一致快照，只适合 QPS 统计、监控计数这类允许短暂不一致的场景。需要精确值或 compareAndSet 语义的地方（限流器、状态机、幂等判断）必须用 AtomicLong。两者是"高吞吐弱一致"与"低吞吐强一致"的取舍。 |
-| 「CAS 公平，因为谁先调用谁先执行」 | CAS 不保证公平：它是抢占语义，不排队、不记录到达顺序，后到线程完全可能第一次就成功，先到线程可能因反复被抢先而长期饥饿。要公平就用 AQS 公平锁（FairSync 里靠 hasQueuedPredecessors() 保证队列顺序），代价是吞吐下降；"先到先得"是队列锁的特性，不是 CAS 的。 |
-| 「自旋就是 while(true) 死循环，JDK 里也这么写」 | JDK 的自旋都有退出条件：synchronized 轻量锁自旋达到次数上限（默认约 10 次或自适应调整）就膨胀为重量级锁改为 park 排队；ARM 的 LL/SC 因存在虚假失败才必须包循环重试。业务代码里手写 for(;;) CAS 必须加退避（Thread.yield 或 LockSupport.parkNanos 随机化），否则就是真死循环烧核。 |
+| ❌ 误区                                        | ✅ 正解                                                                                                                                                                                                                                          |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 「CAS 是无锁的，所以一定比加锁快」                         | 只在低竞争下成立。高竞争时大量线程自旋重试、失败率随并发数上升，CAS 吞吐反而低于阻塞锁且烧 CPU，典型现象是压测 TPS 不涨反降。是否用 CAS 取决于竞争强度：低竞争用 CAS，高竞争考虑 LongAdder 分散热点或带兜底排队的锁（synchronized 锁升级就是这套思路）。                                                                                           |
+| 「CAS 不会发生死锁，所以它就是安全的」                       | 对死锁免疫不等于没有问题。CAS 因为没有锁可持有所以不会死锁，但其余短板仍在：ABA 会吞掉中间变更、高竞争自旋耗 CPU、一次只能保护一个变量、不保证公平可能饥饿。评估 CAS 方案要把这四条一起纳入，而不是只拿"无死锁"当安全凭证。                                                                                                                       |
+| 「AtomicInteger 能原子地更新多个变量」                  | 不能，它只保护自己那一个 int，compareAndSwapInt 一次只操作一个内存字。要原子改多个变量：封装成对象用 AtomicReference 整体换引用；或把多个值打包进一个 long 的高低 32 位（ReentrantReadWriteLock 对读写计数的做法）；或直接加锁保护复合操作。                                                                                    |
+| 「ABA 问题在业务系统里很少见，不用管」                       | 账户余额、库存、订单状态机这类"值会来回变"的场景天然是 ABA 温床：只要存在退款、回滚、撤销等"改了又改回来"的业务路径，只比值的 CAS 就可能吞掉中间变更。正确做法是加版本戳——Java 层用 AtomicStampedReference，数据库乐观锁用 version 字段，绝不要直接比对业务值。                                                                                    |
+| 「用 AtomicStampedReference 包装 Integer 就万事大吉」 | 版本戳解的是 ABA，但它比较值时用 == 比较引用而非 equals：Integer 只对 -128~127 缓存，超出范围 Integer.valueOf(1000) 每次返回新对象，CAS 会因引用不等而永远失败。规避方式：全程持有同一对象引用做 CAS，或改用自定义不可变类，不要依赖包装类型缓存。                                                                                     |
+| 「`getReference()` 再 `getStamp()` 读出来就能做判断」  | <span style="color:rgb(222, 60, 54)">这两个方法各自独立读一次 `pair`，两次读之间值可能被改，**拿到的 value 和 stamp 可能不配套，这个组合从未真实存在过**。</span>基于它做判断或计算就是基于错误快照。正确用法是 `int[] h = new int[1]; Integer v = ref.get(h); int stamp = h[0];`——一次读，保证配套（Oracle javadoc 的推荐用法）。 |
+| 「CAS 成功后还需要读别的字段，这跟 ABA 无关」                 | 恰恰相反，这正是 ABA 有害的原因。CAS 只保证"被比较的那个值没变"，不保证"值以外的信息没变"。无锁栈里 head 引用相同但 next 指针已指向别的结构，退款场景里余额相同但中间发生过扣款，都是"值对了、上下文错了"。所以判断要不要防 ABA，就看 CAS 成功后是否依赖值以外的信息。                                                                                         |
+| 「LongAdder 可以完全替代 AtomicLong」               | 不能。LongAdder 的 sum() 是逐个累加 Cell 的结果，并发更新过程中读到的不是强一致快照，只适合 QPS 统计、监控计数这类允许短暂不一致的场景。需要精确值或 compareAndSet 语义的地方（限流器、状态机、幂等判断）必须用 AtomicLong。两者是"高吞吐弱一致"与"低吞吐强一致"的取舍。                                                                             |
+| 「CAS 公平，因为谁先调用谁先执行」                         | CAS 不保证公平：它是抢占语义，不排队、不记录到达顺序，后到线程完全可能第一次就成功，先到线程可能因反复被抢先而长期饥饿。要公平就用 AQS 公平锁（FairSync 里靠 hasQueuedPredecessors() 保证队列顺序），代价是吞吐下降；"先到先得"是队列锁的特性，不是 CAS 的。                                                                                       |
+| 「自旋就是 while(true) 死循环，JDK 里也这么写」            | JDK 的自旋都有退出条件：synchronized 轻量锁自旋达到次数上限（默认约 10 次或自适应调整）就膨胀为重量级锁改为 park 排队；ARM 的 LL/SC 因存在虚假失败才必须包循环重试。业务代码里手写 for(;;) CAS 必须加退避（Thread.yield 或 LockSupport.parkNanos 随机化），否则就是真死循环烧核。                                                          |
 
 ---
 
@@ -554,8 +565,8 @@ public class LongAdderCompareDemo {
 - **优点**：无锁、无上下文切换、无死锁、读不阻塞。
 - **缺点**：① 自旋烧 CPU ② 只能改一个变量 ③ ABA ④ 高竞争吞吐反而降。
 - **公平性**：CAS **不保证公平**（抢占语义，可能饥饿）。解法：AQS 公平锁（`hasQueuedPredecessors`）、yield/指数退避、LongAdder 分散热点、自旋上限后升级重量级锁（synchronized 锁升级思路）。
-- **ABA**：值从 A → B → A，CAS 误判未变。场景：无锁栈 pop、账户余额 100→50→100、库存回滚、DB 乐观锁只比值不比版本。
+- **ABA**：值从 A → B → A，CAS 误判未变。**场景：无锁栈 pop、账户余额 100→50→100、库存回滚、DB 乐观锁只比值不比版本**。
 - **ABA 要不要处理**：只看一条——**CAS 成功后是否依赖值以外的信息**。只算数的不怕（`incrementAndGet`），动结构/动业务的怕（无锁栈、退款回滚、状态流转）。
 - **解 ABA**：`AtomicStampedReference`（值+版本戳）、`AtomicMarkableReference`（值+布尔标记）、DB `version` 字段、悲观锁、不可变对象。
-- **StampedReference 三个要点**：① 底层是「值+戳打包成不可变 `Pair`，CAS 的是 Pair 引用」；② <span style="color:red">取值用 `get(int[] stampHolder)`，别分开调 `getReference()` + `getStamp()`</span>（两次读可能不配套）；③ 它用 `==` 比引用，注意 Integer 缓存陷阱。
+- **StampedReference 三个要点**：① 底层是「值+戳打包成不可变 `Pair`，CAS 的是 Pair 引用」；② <span style="color:rgb(222, 60, 54)">取值用 `get(int[] stampHolder)`，别分开调 `getReference()` + `getStamp()`</span>（两次读可能不配套）；③ 它用 `==` 比引用，注意 Integer 缓存陷阱。
 - **热点计数**：优先 LongAdder（分段 Cell 分散竞争），但要接受 sum() 弱一致。

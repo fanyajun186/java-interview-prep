@@ -15,6 +15,7 @@
 | [`spring-distributed-openfeign.md`](spring-distributed-openfeign.md) | OpenFeign | `@FeignClient` 字段、Encoder/Decoder、LoadBalancer、Ribbon 退场 |
 | [`spring-distributed-resilience4j.md`](spring-distributed-resilience4j.md) | Resilience4j | 熔断、舱壁、限流、重试、超时、降级 |
 | [`spring-distributed-boot-vs-cloud.md`](spring-distributed-boot-vs-cloud.md) | Boot vs Cloud | 定位差异、生态、版本对应 |
+| [`spring-distributed-circular-dependency.md`](spring-distributed-circular-dependency.md) | 循环依赖 | 三级缓存、`getEarlyBeanReference`、为什么解不了、`@Lazy` 修法 |
 | [`spring-distributed-cap.md`](spring-distributed-cap.md) | CAP | 为什么只能满足两个、CP/AP 选型 |
 
 ## 版本基线
@@ -34,4 +35,5 @@
 | OpenFeign 调用链、@FeignClient 字段、LoadBalancer | `spring-distributed-openfeign.md` |
 | Resilience4j 熔断/舱壁/限流/重试/超时 | `spring-distributed-resilience4j.md` |
 | Boot 和 Cloud 区别、生态与版本 | `spring-distributed-boot-vs-cloud.md` |
+| 三级缓存为什么不能省成两级、2.6 为什么报错 | `spring-distributed-circular-dependency.md` |
 | CAP 为什么只能满足两个 | `spring-distributed-cap.md` |

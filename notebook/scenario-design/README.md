@@ -18,6 +18,8 @@
 | `scenario-04-like-counter.md` | 点赞计数：Redis INCR 计数、Set/Hash 幂等、增量合并落库、冷热分离与懒加载、对账自愈 |
 | `scenario-05-nearby-geo.md` | 附近的人：geohash 编码原理、Redis GEO 底层 ZSet、边界效应与 8 邻域、与 MySQL/ES/PostGIS 选型对比 |
 | `scenario-06-checkin-bitmap.md` | 签到打卡：Bitmap 按月分片、BITCOUNT 统计、BITPOS 查首次缺卡、连续天数位运算、补卡与冷热分离 |
+| `scenario-07-idempotency.md` | 接口幂等性：唯一索引、Token、乐观锁、分布式锁、状态机、幂等表六种方案与选型，重复与并发的区别、幂等键与 TTL、支付回调重推 |
+| `scenario-08-moments-feed.md` | 朋友圈 Feed 流：读扩散（300 路扇出、3500 万读 QPS）vs 写扩散（300 亿次写入/35 万 QPS）、好友上限 5000 作为扇出天花板、ZSet 收件箱与 score 精度、削峰/合并/只推活人、收件箱裁剪、分组可见、投递幂等与推拉结合 |
 
 > 每份讲义末尾都有「追问链 · 参考答案」与「误区 · 正解」两节。完整清单与实时行数见上级 `../README.md`（由 `scripts/gen_notebook_index.py` 自动生成）。
 
@@ -40,6 +42,7 @@
 | 4 | 点赞 / 计数 | Redis 计数 + 定时落库、幂等、冷热分离 |
 | 5 | 附近的人 | GEO / geohash、ZSet 范围查询 |
 | 6 | 签到打卡 / 缺卡 | Bitmap 按月分片、BITCOUNT、BITPOS 找缺卡日 |
+| 7 | 接口幂等 | 唯一索引 / Token / 乐观锁 / 状态机 / 幂等表，重复与并发分开防 |
 
 ## 学习建议
 

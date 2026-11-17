@@ -19,6 +19,7 @@
 | `ai-06-project-experience.md` | RAG 知识库项目 STAR 故事 + autocava-ai 项目提炼口径 + 预判追问 | 第 1、2、12、14 轮 |
 | `ai-07-agent-paradigms.md` | Agent 定义与本质、核心组件、设计范式清单、Agent vs Workflow、Tools/Workflow/Agent 三者辨析、ReAct 实现细节、三大范式对比（对应 Q1~Q6） | 2026-10-14 新增 |
 | `ai-08-rag-and-vector-db.md` | RAG 双链路 10 步工作流与失败点、进阶范式（混合检索/HyDE/Agentic RAG/GraphRAG）、评估指标、向量数据库原理（HNSW/IVF/PQ）与选型（对应 Q7~Q8） | 2026-10-14 新增 |
+| `ai-09-nacos-prompt-registry.md` | Nacos 3.x Prompt 管理：三种接入路径辨析、数据模型与生命周期、**以 media-admin-app 车系报告 `generateReport` 全链路为实例**（Controller → Service → PromptService → BedrockChatClient → 落库）、官方 SDK / Client API 等价写法对照、Spring AI Alibaba 对照、生产清单与面试口径 | 2026-11-07 新增，2026-11-08 换成项目真实示例 |
 | `ai-project-interview.md` | autocava-ai `ChatController#chatMessagesStream` 全链路节点表 + 流程图 + 三个实际例子（先于此批文件成稿，内容不在此重复） | 第 15 轮 |
 
 ## 高频面试题速查（15 题 → 详细答案所在文件）
@@ -58,4 +59,4 @@
 
 ## 建议学习顺序
 
-1. `ai-01` 建立面试全局 → 2. `ai-02` 吃透 RAG（最高频）→ 3. `ai-03` 吃透 Tool Calling / ReAct（次高频）→ 4. `ai-04` Skills 机制（区分你和只会 CRUD 候选人的话题）→ 5. `ai-05` 工程落地（你的主场，答题往这里靠）→ 6. `ai-06` + `ai-project-interview.md` 项目深挖弹药 → 7. `ai-07` Agent 范式与 Workflow 边界（拉开区分度）→ 8. `ai-08` RAG 进阶与向量库（深度追问的弹药）
+1. `ai-01` 建立面试全局 → 2. `ai-02` 吃透 RAG（最高频）→ 3. `ai-03` 吃透 Tool Calling / ReAct（次高频）→ 4. `ai-04` Skills 机制（区分你和只会 CRUD 候选人的话题）→ 5. `ai-05` 工程落地（你的主场，答题往这里靠）→ 6. `ai-06` + `ai-project-interview.md` 项目深挖弹药 → 7. `ai-07` Agent 范式与 Workflow 边界（拉开区分度）→ 8. `ai-08` RAG 进阶与向量库（深度追问的弹药） → 9. `ai-09` Nacos Prompt 管理（配置治理与 Java 接入，拉开工程落地区分度）

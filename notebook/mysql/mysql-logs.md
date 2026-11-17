@@ -103,11 +103,11 @@ undo log 记录的是「如何撤销这次修改」的**逻辑逆操作**，而�
 
 undo 存储内容速查：
 
-| 操作类型   | undo 类型     | 记录类型                     | 核心存储内容   | 主要用途       | 回收时机                 |
-| ------ | ----------- | ------------------------ | -------- | ---------- | -------------------- |
-| INSERT | Insert Undo | `TRX_UNDO_INSERT_REC`    | 完整主键值    | 事务回滚（删除记录） | 提交即可删                |
-| UPDATE | Update Undo | `TRX_UNDO_UPD_EXIST_REC` | 被修改列的旧值  | 回滚与 MVCC   | 无活跃 ReadView 后 purge |
-| DELETE | Update Undo | `TRX_UNDO_DEL_MARK_REC`  | 被删行的完整旧值 | 回滚与 MVCC   | 无活跃 ReadView 后 purge |
+| 操作类型   | undo 类型     | 记录类型                     | 核心存储内容   | 主要用途       | 回收时机                     |
+| ------ | ----------- | ------------------------ | -------- | ---------- | ------------------------ |
+| INSERT | Insert Undo | `TRX_UNDO_INSERT_REC`    | 完整主键值    | 事务回滚（删除记录） | 提交即可删                    |
+| UPDATE | Update Undo | `TRX_UNDO_UPD_EXIST_REC` | 被修改列的旧值  | 回滚与 MVCC   | 无活跃 ReadView 后 purge（清除） |
+| DELETE | Update Undo | `TRX_UNDO_DEL_MARK_REC`  | 被删行的完整旧值 | 回滚与 MVCC   | 无活跃 ReadView 后 purge（清除） |
 
 一句话：undo log 是以**主键为锚点、以旧值为核心**的逻辑信息，通过 `DB_ROLL_PTR` 与数据行串联，精巧地支撑起事务回滚与 MVCC。
 

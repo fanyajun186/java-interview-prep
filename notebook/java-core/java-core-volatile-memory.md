@@ -1,4 +1,4 @@
-> 2026-10-14 成稿，Java 底层与并发主题
+> 2026-10-14 成稿，Java 底层与并发主题  
 > 2026-10-16 补 §2.6「怎么自己验证这一章」（javap -v 看 ACC_VOLATILE、PrintAssembly、jcstress）
 
 # volatile：可见性原理、MESI 协议与内存屏障
@@ -19,7 +19,7 @@ volatile 是 JVM 提供给开发者的**最轻量级的并发原语**：它用�
 
 ### 1.2 有序性 / 禁止特定重排序
 
-volatile 通过插入内存屏障，禁止**特定方向**的指令重排序：volatile 写之前的普通读写，不能重排到 volatile 写之后；volatile 读之后的普通读写，不能重排到 volatile 读之前。
+volatile 通过插入**内存屏障**，禁止**特定方向**的指令重排序：volatile 写之前的普通读写，不能重排到 volatile 写之后；volatile 读之后的普通读写，不能重排到 volatile 读之前。
 
 注意措辞：volatile **不是禁止所有重排序**，而是建立一个「单向栅栏」，把 volatile 操作前后的内存操作隔开。
 
@@ -45,18 +45,18 @@ putstatic     count     // 3. 写：把结果写回 count
 
 假设 count 初值 0，线程 A、B 同时执行：
 
-| 时刻 | 线程 A | 线程 B | 主内存 count |
-|------|--------|--------|--------------|
-| t1 | 读取 count = 0 | | 0 |
-| t2 | | 读取 count = 0 | 0 |
-| t3 | 计算 0+1 = 1 | | 0 |
-| t4 | | 计算 0+1 = 1 | 0 |
-| t5 | 写回 count = 1 | | 1 |
-| t6 | | 写回 count = 1 | **1（应为 2）** |
+| 时刻 | 线程 A         | 线程 B         | 主内存 count   |
+| -- | ------------ | ------------ | ----------- |
+| t1 | 读取 count = 0 |              | 0           |
+| t2 |              | 读取 count = 0 | 0           |
+| t3 | 计算 0+1 = 1   |              | 0           |
+| t4 |              | 计算 0+1 = 1   | 0           |
+| t5 | 写回 count = 1 |              | 1           |
+| t6 |              | 写回 count = 1 | **1（应为 2）** |
 
 线程 B 在 t2 读到的 0 虽然是最新的，但在它执行 +1 和写回之间，值已经被 A 改成了 1 —— **B 是基于一个「过期但仍然合法」的旧值做写入，覆盖了 A 的结果**。volatile 保证「读到的那一刻是最新值」，但**不保证「读到到写回之间没人改」**。
 
-> **面试口径**："volatile 保证可见性，但它只保证**读那一刻的可见性**。`i++` 是 read-modify-write 三步复合操作，两个线程可能读到同一个值各自加一写回，最终丢失一次更新。要保证原子性得用 `AtomicInteger`（CAS + volatile value）或 `synchronized` / `Lock`。"
+> **面试口径**："volatile 保证可见性，**但它只保证读那一刻的可见性**。`i++` 是 read-modify-write 三步复合操作，两个线程可能读到同一个值各自加一写回，最终丢失一次更新。要保证原子性得用 `AtomicInteger`（CAS + volatile value）或 `synchronized` / `Lock`。"
 
 正确写法（三者按场景选）：
 
@@ -118,12 +118,12 @@ lock addl $0x0, (%rsp)       ; 相当于 StoreLoad 屏障
 
 现代 CPU 每个核有自己的 L1/L2 缓存，多核共享 L3 和主内存。为了让大家看到的数据一致，硬件实现了缓存一致性协议，最经典的是 **MESI**，四种状态：
 
-| 状态 | 全称 | 含义 | 是否脏 | 是否存在于多核 |
-|------|------|------|--------|----------------|
-| M | Modified | 已修改，只在本核缓存，与主内存不一致 | 是 | 仅本核 |
-| E | Exclusive | 独占，干净，与主内存一致 | 否 | 仅本核 |
-| S | Shared | 多核共享，干净，与主内存一致 | 否 | 多个核 |
-| I | Invalid | 失效，该缓存行数据无效 | - | - |
+| 状态 | 全称        | 含义                 | 是否脏 | 是否存在于多核 |
+| -- | --------- | ------------------ | --- | ------- |
+| M  | Modified  | 已修改，只在本核缓存，与主内存不一致 | 是   | 仅本核     |
+| E  | Exclusive | 独占，干净，与主内存一致       | 否   | 仅本核     |
+| S  | Shared    | 多核共享，干净，与主内存一致     | 否   | 多个核     |
+| I  | Invalid   | 失效，该缓存行数据无效        | -   | -       |
 
 #### MESI 状态转换图（含不同核发起的操作）
 
@@ -151,7 +151,7 @@ stateDiagram-v2
 
 **这是本文件最重要的一问。**
 
-答案是：<span style="color:red">**MESI 保证的是「最终」一致性，而不是「立即」一致性；而且它只解决缓存行层面的数据一致，解决不了指令重排序。**</span>这两个短板正是 volatile 存在的理由。
+答案是：<span style="color:rgb(222, 60, 54)">**MESI 保证的是「最终」一致性，而不是「立即」一致性；而且它只解决缓存行层面的数据一致，解决不了指令重排序。**</span>这两个短板正是 volatile 存在的理由。
 
 具体原因是 CPU 为了性能引入的两个**异步队列**：
 
@@ -184,11 +184,11 @@ Core B 收到 Invalidate 消息后，如果立刻去失效缓存行会打断自�
 
 **3）内存屏障的作用正是清空这两个队列**
 
-| 屏障类型 | 硬件动作 | 解决的队列 |
-|----------|----------|------------|
-| 写屏障 Store Barrier | 把 Store Buffer 中的条目全部刷出（drain / flush）到缓存行 | Store Buffer |
-| 读屏障 Load Barrier | 处理完 Invalidate Queue 中的全部消息后再执行后续读 | Invalidate Queue |
-| 全屏障 mfence / lock 前缀 | 两者都做 | 两者 |
+| 屏障类型                 | 硬件动作                                       | 解决的队列            |
+| -------------------- | ------------------------------------------ | ---------------- |
+| 写屏障 Store Barrier    | 把 Store Buffer 中的条目全部刷出（drain / flush）到缓存行 | Store Buffer     |
+| 读屏障 Load Barrier     | 处理完 Invalidate Queue 中的全部消息后再执行后续读         | Invalidate Queue |
+| 全屏障 mfence / lock 前缀 | 两者都做                                       | 两者               |
 
 所以完整的逻辑链是：
 
@@ -263,18 +263,18 @@ public class VisibilityDemo {
 
 ### 3.1 CPU 层的四类屏障
 
-| 屏障 | 含义 | 禁止的重排序 | x86 上的开销 |
-|------|------|--------------|--------------|
-| LoadLoad | Load1; LL; Load2 | Load2 及后续读不能重排到 Load1 之前 | 几乎免费（TSO 保证） |
-| StoreStore | Store1; SS; Store2 | Store2 不能重排到 Store1 之前（保证 Store1 数据先对其他核可见） | 几乎免费 |
-| LoadStore | Load1; LS; Store2 | Store2 不能重排到 Load1 之前 | 几乎免费 |
-| **StoreLoad** | Store1; SL; Load2 | Load2 及后续读不能重排到 Store1 之前（必须先让 Store1 对其他核可见） | **最重**，需 lock 前缀或 mfence |
+| 屏障            | 含义                 | 禁止的重排序                                        | x86 上的开销                 |
+| ------------- | ------------------ | --------------------------------------------- | ------------------------ |
+| LoadLoad      | Load1; LL; Load2   | Load2 及后续读不能重排到 Load1 之前                      | 几乎免费（TSO 保证）             |
+| StoreStore    | Store1; SS; Store2 | Store2 不能重排到 Store1 之前（保证 Store1 数据先对其他核可见）   | 几乎免费                     |
+| LoadStore     | Load1; LS; Store2  | Store2 不能重排到 Load1 之前                         | 几乎免费                     |
+| **StoreLoad** | Store1; SL; Load2  | Load2 及后续读不能重排到 Store1 之前（必须先让 Store1 对其他核可见） | **最重**，需 lock 前缀或 mfence |
 
 **为什么 StoreLoad 最贵？** 因为它要求"先把 Store Buffer 排干（写可见），再等所有失效被处理（读拿到新值）"，等于同时做了写屏障和读屏障，横跨了 Store Buffer 与 Invalidate Queue 两个异步队列的完整往返延迟。JMH 实测下来 volatile 写的开销基本就是这一条 StoreLoad 屏障的成本。
 
 > 有个细节值得背：HotSpot 之所以选择 `lock addl $0x0,(%rsp)` 而不是 `mfence`，是因为在多数 x86 微架构上前者延迟更低（mfence 在某些 CPU 上会把后续非内存指令也一起串行化）。
 
-### 3.2 JSR-133 定义的 volatile 屏障插入规则
+### 3.2 JSR-133 定义的 volatile 屏障插入规则1
 
 JMM 用一张表规定了编译器必须如何给 volatile 操作加栅栏：
 
@@ -297,11 +297,12 @@ flowchart TB
     WRITE --> READ
 ```
 
+
 用口诀记：**volatile 写：前 StoreStore，后 StoreLoad**（两道）；**volatile 读：后 LoadLoad + LoadStore**（两道，都在后面）。
 
 注意 volatile 读**前面**是不放屏障的 —— 它不需要阻止上方的读跑到这里之后，只需要阻止下方的读写跑到它之前。
 
-<span style="color:red">**这里最反直觉：volatile 写是「前后各一道」，volatile 读只在「后面」放两道，前面什么都不放。** 面试被问"volatile 读写各插几个屏障、插在哪一侧"，答错方向就说明是背的。另外 x86 上 volatile 读那两道屏障几乎不生成任何指令（TSO 已保证），**真正花钱的只有 volatile 写后面那道 StoreLoad**。</span>
+<span style="color:rgb(222, 60, 54)">**这里最反直觉：volatile 写是「前后各一道」，volatile 读只在「后面」放两道，前面什么都不放。** 面试被问"volatile 读写各插几个屏障、插在哪一侧"，答错方向就说明是背的。另外 x86 上 volatile 读那两道屏障几乎不生成任何指令（TSO 已保证），**真正花钱的只有 volatile 写后面那道 StoreLoad**。</span>
 
 > **面试口径**："volatile 写前后各有一道屏障，前面是 StoreStore、后面是 StoreLoad；volatile 读的后面是 LoadLoad 加 LoadStore。这里最贵的就是 volatile 写后面的那条 StoreLoad，x86 上体现为 lock 前缀指令。JMM 采用的是保守策略：如果相邻两个操作之间没有 volatile 访问，编译器还是可以自由重排，所以 volatile 的开销只会落在真正需要的边界上。"
 
@@ -320,6 +321,7 @@ happens-before 是 JMM 的核心概念：如果 A happens-before B，那么 A �
 > 如果 A happens-before B，且 B happens-before C，则 A happens-before C。
 
 这两条规则组合起来威力很大 —— 它让 volatile 成为一个**跨线程的发布管道**：既然 volatile 写之前的**所有**操作都被 StoreStore 屏障挡在 volatile 写之前（它们的结果会随 volatile 写一起被刷出），那么另一个线程一旦读到最新 volatile 值，就必然能看到那些写在 volatile 写之前的全部状态。
+
 ```java
 class VolatilePublication {
     int a = 0;                       // 普通字段
@@ -392,6 +394,7 @@ class ConfigHolder {
     }
 }
 ```
+
 与之等价的其他安全发布方式（面试可举例加分）：`static` 静态初始化器（JVM 在类初始化时加锁，天然安全）、`final` 字段正确构造的对象（构造函数不逸出 this）、volatile 字段引用的对象、`ConcurrentHashMap` / `BlockingQueue` 等并发容器、`synchronized` 内发布。
 
 > 注意：`final` 字段的安全性依赖 JSR-133 的 **final 字段语义**（构造函数内对 final 的写会被插入 StoreStore 屏障 + freeze 操作），**前提是构造函数没有把 this 逸出**。
@@ -429,7 +432,7 @@ putstatic     #2      // 3. 把引用赋给静态变量 instance
 
 问题在于：**步骤 2 和步骤 3 之间不存在数据依赖，JIT 完全可以把它们重排成 1 → 3 → 2**（写引用先于初始化）。加上 volatile 后，步骤 3 之后的 StoreLoad 屏障会禁止这个重排。
 
-<span style="color:red">**必考点的准确答法：这里 volatile 起的是「有序性」作用，不是「可见性」作用。** 很多人答"加 volatile 让其他线程能看到 instance 的更新"——方向错了。真正要挡的是 `new` 的三步重排，让别的线程拿到"引用已赋值但对象没构造完"的半成品。答出这一层才算答对。</span>
+<span style="color:rgb(222, 60, 54)">**必考点的准确答法：这里 volatile 起的是「有序性」作用，不是「可见性」作用。** 很多人答"加 volatile 让其他线程能看到 instance 的更新"——方向错了。真正要挡的是 `new` 的三步重排，让别的线程拿到"引用已赋值但对象没构造完"的半成品。答出这一层才算答对。</span>
 
 #### DCL 重排序问题示意
 
@@ -490,12 +493,12 @@ public class Singleton {
 
 ## 六、volatile 不适用的场景
 
-| 场景 | 例子 | 原因 | 替代方案 |
-|------|------|------|----------|
-| 复合操作（读改写） | `i++`、`count += x` | read-modify-write 三步，中间可能被插入其他写 | `AtomicInteger` / `LongAdder` / 锁 |
-| 依赖当前值的判断 | `if (x > 0) { x = x - 1; }` | check-then-act，检查到执行之间状态已变 | CAS 循环 / 锁 |
-| 多变量的不变式 | 需要保证 `a + b == 10` 恒成立 | volatile 无法把多个变量的写打包成原子操作 | `synchronized` 把多个写包进一个临界区 |
-| 需要互斥（while 期间不能被别人改） | 长时间的非原子逻辑 | volatile 没有排他性 | `ReentrantLock` / `synchronized` |
+| 场景                   | 例子                          | 原因                              | 替代方案                              |
+| -------------------- | --------------------------- | ------------------------------- | --------------------------------- |
+| 复合操作（读改写）            | `i++`、`count += x`          | read-modify-write 三步，中间可能被插入其他写 | `AtomicInteger` / `LongAdder` / 锁 |
+| 依赖当前值的判断             | `if (x > 0) { x = x - 1; }` | check-then-act，检查到执行之间状态已变      | CAS 循环 / 锁                        |
+| 多变量的不变式              | 需要保证 `a + b == 10` 恒成立      | volatile 无法把多个变量的写打包成原子操作       | `synchronized` 把多个写包进一个临界区        |
+| 需要互斥（while 期间不能被别人改） | 长时间的非原子逻辑                   | volatile 没有排他性                  | `ReentrantLock` / `synchronized`  |
 
 一句话判断标准：**只要新值依赖于旧值，或者需要同时维护多个变量的一致性，volatile 就没戏，必须上 CAS 或锁。**
 
@@ -503,18 +506,18 @@ public class Singleton {
 
 ## 七、volatile vs synchronized 对比
 
-| 维度 | volatile | synchronized |
-|------|----------|--------------|
-| **原子性** | 不保证（仅单次读/写） | 保证（临界区互斥） |
-| **可见性** | 保证（立即刷新 + 失效他人副本） | 保证（unlock 前必须同步回主内存） |
-| **有序性** | 保证（禁止特定重排序） | 保证（同一锁的两个同步块串行执行 as-if-serial） |
-| **是否阻塞** | 否，不会引起线程上下文切换 | 是，竞争失败的线程会阻塞挂起（内核态切换） |
-| **是否需要线程上下文切换** | 不需要 | 升级到重量级锁时需要，用户态↔内核态开销大 |
-| **能否被编译器优化掉** | 不能被优化掉（必须每次读） | JIT 可做锁消除、锁粗化 |
-| **是否可重入** | 不适用 | 可重入（_recursions 计数） |
-| **适用场景** | 一个线程写多个线程读；状态标记；一次性发布；DCL | 复合操作；多变量一致性；需要互斥的业务逻辑 |
-| **性能量级** | 极低（volatile 读近乎免费，volatile 写约一个 StoreLoad 屏障） | 低竞争下（偏向/轻量）很低；高竞争下退化为内核互斥很贵 |
-| **底层实现** | 内存屏障 + CPU 缓存一致性 | Monitor（ObjectMonitor）+ Mark Word 锁升级 |
+| 维度              | volatile                                      | synchronized                          |
+| --------------- | --------------------------------------------- | ------------------------------------- |
+| **原子性**         | 不保证（仅单次读/写）                                   | 保证（临界区互斥）                             |
+| **可见性**         | 保证（立即刷新 + 失效他人副本）                             | 保证（unlock 前必须同步回主内存）                  |
+| **有序性**         | 保证（禁止特定重排序）                                   | 保证（同一锁的两个同步块串行执行 as-if-serial）        |
+| **是否阻塞**        | 否，不会引起线程上下文切换                                 | 是，竞争失败的线程会阻塞挂起（内核态切换）                 |
+| **是否需要线程上下文切换** | 不需要                                           | 升级到重量级锁时需要，用户态↔内核态开销大                 |
+| **能否被编译器优化掉**   | 不能被优化掉（必须每次读）                                 | JIT 可做锁消除、锁粗化                         |
+| **是否可重入**       | 不适用                                           | 可重入（\_recursions 计数）                  |
+| **适用场景**        | 一个线程写多个线程读；状态标记；一次性发布；DCL                     | 复合操作；多变量一致性；需要互斥的业务逻辑                 |
+| **性能量级**        | 极低（volatile 读近乎免费，volatile 写约一个 StoreLoad 屏障） | 低竞争下（偏向/轻量）很低；高竞争下退化为内核互斥很贵           |
+| **底层实现**        | 内存屏障 + CPU 缓存一致性                              | Monitor（ObjectMonitor）+ Mark Word 锁升级 |
 
 > **面试口径**："volatile 是 synchronized 的轻量级替代，但不能互相取代：volatile 管的是'看得见、不乱序'，synchronized 额外管'只能一个人改'。需要互斥或有复合操作时，只能用 synchronized 或 JUC 的锁。volatile 最大的性能优势是不会造成线程阻塞和上下文切换。"
 
@@ -522,40 +525,40 @@ public class Singleton {
 
 ## 八、追问链 · 参考答案
 
-| 层级 | 问题 | 参考答案要点 |
-| --- | --- | --- |
-| L1 | volatile 有哪三条语义？ | ① **可见性**：写立即刷新到主内存并使其他核的副本失效；② **有序性**：禁止特定方向的重排序（写前不能后移、读后不能前移），不是禁止全部重排；③ **不保证原子性**：单次读/写原子，但 `i++` 这类 read-modify-write 复合操作不安全。前两条由 JSR-133 的屏障规则兑现。 |
-| L1 | 为什么 `volatile int i` 上的 `i++` 在多线程下会丢失更新？请用字节码三步解释。 | `count++` 编译为 `getstatic`（读）、`iadd`（改）、`putstatic`（写）三步。A、B 都读到 0，各自算出 1 后写回，结果仍是 1。volatile 只保证**读到那一刻是最新值**，不保证读到写回之间没人插进来改。要保证原子性得用 `AtomicInteger`/`LongAdder` 或 `synchronized`。 |
-| L1 | volatile 能否修饰局部变量？为什么？（答：不能，局部变量在栈帧私有，不存在可见性问题；编译期就报错） | 不能，编译期就报错。局部变量存放在线程私有的栈帧里，天然不被其他线程共享，本来就不存在可见性与重排序问题，加 volatile 没有任何语义可兑现。volatile 是**字段修饰符**，只能修饰类的成员变量或静态字段 —— 这也正说明 volatile 解决的是堆上共享数据的跨线程可见性。 |
-| L2 | volatile 写在 x86 上生成什么指令？这条指令的两大效果是什么？ | 生成带 `lock` 前缀的指令，典型是 `lock addl $0x0,(%rsp)`（较新 JDK 也用 `lock cmpxchg` 或 `mfence`）。两大效果：① 把 store buffer 排干、修改被推到一致性点（写回）；② 通过总线广播 Invalidate，使其他核的对应缓存行置 **Invalid**。代价约等于一条 StoreLoad 屏障。 |
-| L2 | 说出 volatile 变量在字节码层面和普通变量的唯一区别是什么？ | 唯一区别是字段的 `access_flags` 上多一个 `ACC_VOLATILE`（0x0040），**指令序列与普通变量完全相同**。所以 `javap -c` 看不出任何差异，必须用 `-XX:+PrintAssembly` 或 hsdis 才能看到 JIT 真正插入的屏障/带 lock 前缀的指令。 |
-| L2 | 为什么 volatile 读在 x86 上几乎不需要屏障指令，而写需要？ | x86 是 **TSO**（Total Store Order）内存模型，硬件已天然禁止 LoadLoad、LoadStore、StoreStore 三种重排序，只剩 StoreLoad 要防，所以 volatile 读不生成任何额外指令、开销接近普通读。而 volatile 写必须排干 store buffer 并广播失效，必须有 `lock` 前缀。ARM/POWER 等弱内存模型上读写都要真实屏障（如 `dmb`）。 |
-| L3 | MESI 四个字母分别代表什么状态？Modified 和 Exclusive 的共同点与区别？ | **M**odified（已修改、脏）、**E**xclusive（独占、干净）、**S**hared（多核共享、干净）、**I**nvalid（失效）。M 与 E 的共同点是都只存在于本核、本核独占；区别是 E 与主内存一致（干净），M 与主内存不一致（脏），被替换或别人来读时必须先写回再让出。 |
-| L3 | 一个核写处于 Shared 状态的缓存行，总线上会发生什么？ | 本核不能直接写，要先发 **BusRdX**（独占读改写）请求；其他核收到后把该缓存行置 Invalid 并回 Ack；本核收齐全部 Ack 后才转为 **M** 状态写入新值。之后其他核再读该地址会 cache miss，必须重新发 BusRd 取到新值 —— 这就是 MESI 保证的最终一致性。 |
-| L3 | 已经有了 MESI 保证缓存一致性，为什么还需要 volatile 和内存屏障？ | 因为 MESI 只保证**最终**一致，且只管缓存行数据、完全不关心指令重排序。CPU 为性能引入的 **Store Buffer** 与 **Invalidate Queue** 让"写入完成"到"他人可见"之间存在窗口；volatile 用内存屏障强制排干这两个队列，把最终一致升级为 JMM 承诺的立即可见，并额外禁止重排序。 |
-| L3 | Store Buffer 和 Invalidate Queue 各自造成了什么问题？分别靠什么屏障解决？ | Store Buffer 让"写指令已执行但新值还躺在缓冲里没进缓存行"，其他核仍读到旧值 → 由**写屏障**把 store buffer 全部刷出。Invalidate Queue 让"已回 Ack 但自己副本仍有效"，读上来的是陈数据 → 由**读屏障**把队列里的失效消息处理完再执行后续读。带 `lock` 前缀的指令或 mfence 是全屏障，两件事都做。 |
-| L4 | CPU 层四类内存屏障分别禁止什么重排序？哪一类开销最大，为什么？ | LoadLoad 禁止后面的读排到前面的读之前；StoreStore 禁止后面的写排到前面的写之前；LoadStore 禁止写排到前面的读之前；**StoreLoad** 禁止后面的读排到前面的写之前。StoreLoad **开销最大**：它要同时排干 Store Buffer 并处理完 Invalidate Queue，横跨两个异步队列的完整往返延迟。 |
-| L4 | JSR-133 规定 volatile 写前后各插什么屏障？volatile 读的屏障插在哪一侧？ | volatile **写**前面插 **StoreStore**、后面插 **StoreLoad**；volatile **读**的两道屏障都插在**后面**，是 **LoadLoad + LoadStore**，前面不放（只需阻止下方读写上移，不必阻止上方操作下移）。口诀：写"前 SS、后 SL"，读"后 LL + LS"。 |
-| L4 | volatile 变量规则和传递性如何支撑"一次性安全发布"？请举出除了 volatile 之外的三种安全发布方式。 | volatile 写前的所有普通写被 StoreStore 屏障挡在写之前，随 volatile 写一起刷出；读方一旦读到新的 volatile 值，由"程序次序 + volatile 规则 + 传递性"必然看到那些写。其他安全发布方式：**static** 静态初始化器（JVM 类初始化锁）、正确构造的 **final** 字段（构造函数不逸出 this）、`ConcurrentHashMap`/`BlockingQueue` 等并发容器、synchronized 内发布。 |
-| L4 | happens-before 是否意味着物理时间上的先后？请解释。 | 不意味着。happens-before 是 JMM 的**可见性**约定，表示 A 的结果对 B 可见且顺序上排在 B 之前，是操作间的偏序关系，不是时钟上的先后。即便 A 在物理时间上先发生，若两者之间没有 hb 链，B 仍可能看不到 A 的结果；反之存在 hb 也推不出物理时间顺序。 |
-| L5 | DCL 单例为什么必须加 volatile？请把 `new Singleton()` 拆成三步并指出哪两步会被重排。 | 三步是：① 分配对象内存；② 调用构造函数初始化；③ 把引用赋给 instance。② 与 ③ 之间**无数据依赖**，JIT 可重排成 ①③②，其他线程在第一次 null 检查时会拿到非 null 但未构造完的对象，读到零值甚至崩溃。volatile 写后面的 StoreLoad 屏障禁止该重排。 |
-| L5 | 除了 DCL，更好的单例写法是什么？静态内部类和枚举各好在何处？ | **静态内部类（Class Holder）**：`Holder.INSTANCE` 靠 JVM 类初始化锁保证唯一与线程安全，天然 lazy loading，且没有 DCL 的复杂度。**枚举** `enum Singleton { INSTANCE; }` 最简洁（Effective Java 推荐），天然防反射与反序列化破坏。两者都不需要 volatile，也不必写双重检查。 |
-| L5 | volatile 数组或对象引用，能保证数组元素/对象字段的可见性吗？（答：不能。volatile 修饰的是引用本身，只保证引用赋值的可见性；元素访问需要 `AtomicReferenceArray` 或其他手段） | 不能。volatile 修饰的是**引用本身**，只保证引用赋值与读取的可见性；数组元素和对象内部字段完全不受保护，写入可能对其他线程长期不可见。要按元素粒度保证，数组用 `AtomicIntegerArray`/`AtomicReferenceArray`，对象字段则自己再加 volatile 或用 `VarHandle` 的 release/acquire 模式。 |
-| L5 | volatile 能否让 `long` / `double` 的非原子问题消失？（答：能，JSR-133 规定 volatile 的 long/double 读写是原子的；但普通 long/double 在 32 位 JVM 上可能被拆成两个 32 位操作） | 能。JSR-133 明确规定 volatile 的 long/double 读写具有**原子性**；而普通 long/double 在 32 位 JVM 上可能被拆成两个 32 位操作，导致另一个线程读到"高 32 位新 + 低 32 位旧"的撕裂值。所以共享的 64 位计数器要么加 volatile，要么用 `AtomicLong`/`LongAdder`。 |
-| L5 | 用 volatile 实现一个"生产者写一次、消费者读多次"的配置发布，需要什么充要条件？（答：单写者 + 写操作不依赖旧值 + 消费方能容忍读取到的中间重入） | 三个条件：① **单一写者**，只有一个线程写，避免写写竞争；② 写操作**不依赖旧值**，是整体替换而非 read-modify-write；③ 消费方能容忍读到发布过程中的中间状态，或统一先读 volatile 开关再取数据。典型写法是 volatile 引用指向一个**不可变**配置对象，替换时整体换引用，读者要么看到旧的要么看到新的。 |
-| L5 | volatile 与 AtomicInteger 的性能差异在哪？什么场景下 LongAdder 比 AtomicInteger 更好？ | volatile 只有可见性、无原子性，代价是禁止 JIT 缓存到寄存器与禁止特定重排，适合状态标记；`AtomicInteger` 靠 CAS 自旋保证原子，中低竞争下最优且结果精确，但高竞争时大量 CAS 失败会烧 CPU；`LongAdder` 用 `base + Cell[]` 分段分摊热点（Cell 带 `@Contended` 防伪共享），高并发累加吞吐可达 AtomicInteger 数倍，代价是 `sum()` 只是估计值。 |
+| 层级 | 问题                                                                                                                                | 参考答案要点                                                                                                                                                                                                                                           |
+| -- | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| L1 | volatile 有哪三条语义？                                                                                                                  | ① **可见性**：写立即刷新到主内存并使其他核的副本失效；② **有序性**：禁止特定方向的重排序（写前不能后移、读后不能前移），不是禁止全部重排；③ **不保证原子性**：单次读/写原子，但 `i++` 这类 read-modify-write 复合操作不安全。前两条由 JSR-133 的屏障规则兑现。                                                                                       |
+| L1 | 为什么 `volatile int i` 上的 `i++` 在多线程下会丢失更新？请用字节码三步解释。                                                                               | `count++` 编译为 `getstatic`（读）、`iadd`（改）、`putstatic`（写）三步。A、B 都读到 0，各自算出 1 后写回，结果仍是 1。volatile 只保证**读到那一刻是最新值**，不保证读到写回之间没人插进来改。要保证原子性得用 `AtomicInteger`/`LongAdder` 或 `synchronized`。                                                             |
+| L1 | volatile 能否修饰局部变量？为什么？（答：不能，局部变量在栈帧私有，不存在可见性问题；编译期就报错）                                                                            | 不能，编译期就报错。局部变量存放在线程私有的栈帧里，天然不被其他线程共享，本来就不存在可见性与重排序问题，加 volatile 没有任何语义可兑现。volatile 是**字段修饰符**，只能修饰类的成员变量或静态字段 —— 这也正说明 volatile 解决的是堆上共享数据的跨线程可见性。                                                                                               |
+| L2 | volatile 写在 x86 上生成什么指令？这条指令的两大效果是什么？                                                                                             | 生成带 `lock` 前缀的指令，典型是 `lock addl $0x0,(%rsp)`（较新 JDK 也用 `lock cmpxchg` 或 `mfence`）。两大效果：① 把 store buffer 排干、修改被推到一致性点（写回）；② 通过总线广播 Invalidate，使其他核的对应缓存行置 **Invalid**。代价约等于一条 StoreLoad 屏障。                                                       |
+| L2 | 说出 volatile 变量在字节码层面和普通变量的唯一区别是什么？                                                                                                | 唯一区别是字段的 `access_flags` 上多一个 `ACC_VOLATILE`（0x0040），**指令序列与普通变量完全相同**。所以 `javap -c` 看不出任何差异，必须用 `-XX:+PrintAssembly` 或 hsdis 才能看到 JIT 真正插入的屏障/带 lock 前缀的指令。                                                                                      |
+| L2 | 为什么 volatile 读在 x86 上几乎不需要屏障指令，而写需要？                                                                                              | x86 是 **TSO**（Total Store Order）内存模型，硬件已天然禁止 LoadLoad、LoadStore、StoreStore 三种重排序，只剩 StoreLoad 要防，所以 volatile 读不生成任何额外指令、开销接近普通读。而 volatile 写必须排干 store buffer 并广播失效，必须有 `lock` 前缀。ARM/POWER 等弱内存模型上读写都要真实屏障（如 `dmb`）。                            |
+| L3 | MESI 四个字母分别代表什么状态？Modified 和 Exclusive 的共同点与区别？                                                                                   | **M**odified（已修改、脏）、**E**xclusive（独占、干净）、**S**hared（多核共享、干净）、**I**nvalid（失效）。M 与 E 的共同点是都只存在于本核、本核独占；区别是 E 与主内存一致（干净），M 与主内存不一致（脏），被替换或别人来读时必须先写回再让出。                                                                                            |
+| L3 | 一个核写处于 Shared 状态的缓存行，总线上会发生什么？                                                                                                    | 本核不能直接写，要先发 **BusRdX**（独占读改写）请求；其他核收到后把该缓存行置 Invalid 并回 Ack；本核收齐全部 Ack 后才转为 **M** 状态写入新值。之后其他核再读该地址会 cache miss，必须重新发 BusRd 取到新值 —— 这就是 MESI 保证的最终一致性。                                                                                           |
+| L3 | 已经有了 MESI 保证缓存一致性，为什么还需要 volatile 和内存屏障？                                                                                          | 因为 MESI 只保证**最终**一致，且只管缓存行数据、完全不关心指令重排序。CPU 为性能引入的 **Store Buffer** 与 **Invalidate Queue** 让"写入完成"到"他人可见"之间存在窗口；volatile 用内存屏障强制排干这两个队列，把最终一致升级为 JMM 承诺的立即可见，并额外禁止重排序。                                                                           |
+| L3 | Store Buffer 和 Invalidate Queue 各自造成了什么问题？分别靠什么屏障解决？                                                                              | Store Buffer 让"写指令已执行但新值还躺在缓冲里没进缓存行"，其他核仍读到旧值 → 由**写屏障**把 store buffer 全部刷出。Invalidate Queue 让"已回 Ack 但自己副本仍有效"，读上来的是陈数据 → 由**读屏障**把队列里的失效消息处理完再执行后续读。带 `lock` 前缀的指令或 mfence 是全屏障，两件事都做。                                                         |
+| L4 | CPU 层四类内存屏障分别禁止什么重排序？哪一类开销最大，为什么？                                                                                                 | LoadLoad 禁止后面的读排到前面的读之前；StoreStore 禁止后面的写排到前面的写之前；LoadStore 禁止写排到前面的读之前；**StoreLoad** 禁止后面的读排到前面的写之前。StoreLoad **开销最大**：它要同时排干 Store Buffer 并处理完 Invalidate Queue，横跨两个异步队列的完整往返延迟。                                                               |
+| L4 | JSR-133 规定 volatile 写前后各插什么屏障？volatile 读的屏障插在哪一侧？                                                                                 | volatile **写**前面插 **StoreStore**、后面插 **StoreLoad**；volatile **读**的两道屏障都插在**后面**，是 **LoadLoad + LoadStore**，前面不放（只需阻止下方读写上移，不必阻止上方操作下移）。口诀：写"前 SS、后 SL"，读"后 LL + LS"。                                                                             |
+| L4 | volatile 变量规则和传递性如何支撑"一次性安全发布"？请举出除了 volatile 之外的三种安全发布方式。                                                                        | volatile 写前的所有普通写被 StoreStore 屏障挡在写之前，随 volatile 写一起刷出；读方一旦读到新的 volatile 值，由"程序次序 + volatile 规则 + 传递性"必然看到那些写。其他安全发布方式：**static** 静态初始化器（JVM 类初始化锁）、正确构造的 **final** 字段（构造函数不逸出 this）、`ConcurrentHashMap`/`BlockingQueue` 等并发容器、synchronized 内发布。 |
+| L4 | happens-before 是否意味着物理时间上的先后？请解释。                                                                                                 | 不意味着。happens-before 是 JMM 的**可见性**约定，表示 A 的结果对 B 可见且顺序上排在 B 之前，是操作间的偏序关系，不是时钟上的先后。即便 A 在物理时间上先发生，若两者之间没有 hb 链，B 仍可能看不到 A 的结果；反之存在 hb 也推不出物理时间顺序。                                                                                                 |
+| L5 | DCL 单例为什么必须加 volatile？请把 `new Singleton()` 拆成三步并指出哪两步会被重排。                                                                        | 三步是：① 分配对象内存；② 调用构造函数初始化；③ 把引用赋给 instance。② 与 ③ 之间**无数据依赖**，JIT 可重排成 ①③②，其他线程在第一次 null 检查时会拿到非 null 但未构造完的对象，读到零值甚至崩溃。volatile 写后面的 StoreLoad 屏障禁止该重排。                                                                                           |
+| L5 | 除了 DCL，更好的单例写法是什么？静态内部类和枚举各好在何处？                                                                                                  | **静态内部类（Class Holder）**：`Holder.INSTANCE` 靠 JVM 类初始化锁保证唯一与线程安全，天然 lazy loading，且没有 DCL 的复杂度。**枚举** `enum Singleton { INSTANCE; }` 最简洁（Effective Java 推荐），天然防反射与反序列化破坏。两者都不需要 volatile，也不必写双重检查。                                                  |
+| L5 | volatile 数组或对象引用，能保证数组元素/对象字段的可见性吗？（答：不能。volatile 修饰的是引用本身，只保证引用赋值的可见性；元素访问需要 `AtomicReferenceArray` 或其他手段）                       | 不能。volatile 修饰的是**引用本身**，只保证引用赋值与读取的可见性；数组元素和对象内部字段完全不受保护，写入可能对其他线程长期不可见。要按元素粒度保证，数组用 `AtomicIntegerArray`/`AtomicReferenceArray`，对象字段则自己再加 volatile 或用 `VarHandle` 的 release/acquire 模式。                                                        |
+| L5 | volatile 能否让 `long` / `double` 的非原子问题消失？（答：能，JSR-133 规定 volatile 的 long/double 读写是原子的；但普通 long/double 在 32 位 JVM 上可能被拆成两个 32 位操作） | 能。JSR-133 明确规定 volatile 的 long/double 读写具有**原子性**；而普通 long/double 在 32 位 JVM 上可能被拆成两个 32 位操作，导致另一个线程读到"高 32 位新 + 低 32 位旧"的撕裂值。所以共享的 64 位计数器要么加 volatile，要么用 `AtomicLong`/`LongAdder`。                                                            |
+| L5 | 用 volatile 实现一个"生产者写一次、消费者读多次"的配置发布，需要什么充要条件？（答：单写者 + 写操作不依赖旧值 + 消费方能容忍读取到的中间重入）                                                  | 三个条件：① **单一写者**，只有一个线程写，避免写写竞争；② 写操作**不依赖旧值**，是整体替换而非 read-modify-write；③ 消费方能容忍读到发布过程中的中间状态，或统一先读 volatile 开关再取数据。典型写法是 volatile 引用指向一个**不可变**配置对象，替换时整体换引用，读者要么看到旧的要么看到新的。                                                                     |
+| L5 | volatile 与 AtomicInteger 的性能差异在哪？什么场景下 LongAdder 比 AtomicInteger 更好？                                                              | volatile 只有可见性、无原子性，代价是禁止 JIT 缓存到寄存器与禁止特定重排，适合状态标记；`AtomicInteger` 靠 CAS 自旋保证原子，中低竞争下最优且结果精确，但高竞争时大量 CAS 失败会烧 CPU；`LongAdder` 用 `base + Cell[]` 分段分摊热点（Cell 带 `@Contended` 防伪共享），高并发累加吞吐可达 AtomicInteger 数倍，代价是 `sum()` 只是估计值。                   |
 
 ---
 
 ## 九、误区 · 正解
 
-| ❌ 误区 | ✅ 正解 |
-| --- | --- |
-| 误区 1：volatile 能保证原子性。 | volatile 只保证**单次读/写**的原子性。`count++` 是 getstatic → iadd → putstatic 三步的 read-modify-write，两个线程可能读到同一个值各自加一写回，丢失一次更新。要保证原子性必须用 `AtomicInteger`（CAS + volatile value）或 `synchronized`/`Lock`。 |
-| 误区 2：volatile 会让代码变快，所以应该到处用。 | 恰恰相反。volatile 禁止了部分 JIT 优化 —— 变量不能被缓存在寄存器、必须每次访存，还要禁止特定方向的重排序；volatile 写另需一条 StoreLoad 屏障（`lock` 前缀）。滥用会把本可进寄存器的热点变量强制每次访存，反而拖慢。 |
-| 误区 3：volatile 修饰了数组/对象引用，数组元素或对象内部的字段也就有了可见性。 | volatile 保护的只是那个**引用本身**的读写。数组元素与对象内部字段的可见性不受任何影响，要自己另想办法：数组用 `AtomicIntegerArray`/`AtomicReferenceArray`，对象字段自己再加 volatile，或用 `VarHandle` 的 release/acquire 模式。 |
-| 误区 4：有了 MESI 缓存一致性协议就不需要 volatile 了。 | MESI 只保证缓存行数据的**最终**一致，Store Buffer 与 Invalidate Queue 让"写入"到"他人可见"之间存在窗口；而且 MESI 完全不关心指令重排序。volatile 用内存屏障排干这两个队列并禁止重排序，补上的正是"及时性"与"顺序性"两块短板。 |
-| 误区 5：volatile 写之前必须保证其他核的缓存行已经失效。 | 实际流程是：写操作进入 Store Buffer 后 CPU 就可以继续往下跑，没有必要同步等待各核 Ack；真正会等待失效确认的是后面的 **StoreLoad 屏障**（带 `lock` 前缀的指令）。MESI 的 Invalidate 与 Ack 收集由硬件在后台异步完成。 |
-| 误区 6：volatile 读也需要像写那样插入 lock 前缀指令。 | 在 x86 的 **TSO** 内存模型下，volatile 读不生成任何额外指令 —— 硬件本身已禁止 LoadLoad / LoadStore / StoreStore 重排序，只需防 StoreLoad。只有 ARM、POWER 这类弱内存模型上，volatile 读才需要真实屏障（如 `dmb`）。 |
-| 误区 7：volatile 能替代 synchronized 做互斥。 | volatile 没有任何**排他性**：两个线程可以同时写同一个 volatile 变量，只是彼此看得见，中间仍会互相覆盖。需要互斥、有复合操作、或要同时维护多个变量的不变式时，必须换成 `synchronized` 或 JUC 的锁与 CAS。 |
-| 误区 8：DCL 单例在 JDK 1.4 及以前也是安全的。 | 不安全。旧 JMM 下 volatile 的语义有缺陷 —— 它不阻止 volatile 写与普通写之间的重排序，所以 DCL 挡不住"引用先赋值、对象后初始化"。DCL 是在 **JDK 1.5（JSR-133 重新定义 JMM）**之后才真正可靠；更稳妥的写法是静态内部类或枚举单例。 |
+| ❌ 误区                                          | ✅ 正解                                                                                                                                                                                       |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 误区 1：volatile 能保证原子性。                         | volatile 只保证**单次读/写**的原子性。`count++` 是 getstatic → iadd → putstatic 三步的 read-modify-write，两个线程可能读到同一个值各自加一写回，丢失一次更新。要保证原子性必须用 `AtomicInteger`（CAS + volatile value）或 `synchronized`/`Lock`。 |
+| 误区 2：volatile 会让代码变快，所以应该到处用。                 | 恰恰相反。volatile 禁止了部分 JIT 优化 —— 变量不能被缓存在寄存器、必须每次访存，还要禁止特定方向的重排序；volatile 写另需一条 StoreLoad 屏障（`lock` 前缀）。滥用会把本可进寄存器的热点变量强制每次访存，反而拖慢。                                                           |
+| 误区 3：volatile 修饰了数组/对象引用，数组元素或对象内部的字段也就有了可见性。 | volatile 保护的只是那个**引用本身**的读写。数组元素与对象内部字段的可见性不受任何影响，要自己另想办法：数组用 `AtomicIntegerArray`/`AtomicReferenceArray`，对象字段自己再加 volatile，或用 `VarHandle` 的 release/acquire 模式。                           |
+| 误区 4：有了 MESI 缓存一致性协议就不需要 volatile 了。          | MESI 只保证缓存行数据的**最终**一致，Store Buffer 与 Invalidate Queue 让"写入"到"他人可见"之间存在窗口；而且 MESI 完全不关心指令重排序。volatile 用内存屏障排干这两个队列并禁止重排序，补上的正是"及时性"与"顺序性"两块短板。                                             |
+| 误区 5：volatile 写之前必须保证其他核的缓存行已经失效。             | 实际流程是：写操作进入 Store Buffer 后 CPU 就可以继续往下跑，没有必要同步等待各核 Ack；真正会等待失效确认的是后面的 **StoreLoad 屏障**（带 `lock` 前缀的指令）。MESI 的 Invalidate 与 Ack 收集由硬件在后台异步完成。                                               |
+| 误区 6：volatile 读也需要像写那样插入 lock 前缀指令。           | 在 x86 的 **TSO** 内存模型下，volatile 读不生成任何额外指令 —— 硬件本身已禁止 LoadLoad / LoadStore / StoreStore 重排序，只需防 StoreLoad。只有 ARM、POWER 这类弱内存模型上，volatile 读才需要真实屏障（如 `dmb`）。                                 |
+| 误区 7：volatile 能替代 synchronized 做互斥。           | volatile 没有任何**排他性**：两个线程可以同时写同一个 volatile 变量，只是彼此看得见，中间仍会互相覆盖。需要互斥、有复合操作、或要同时维护多个变量的不变式时，必须换成 `synchronized` 或 JUC 的锁与 CAS。                                                               |
+| 误区 8：DCL 单例在 JDK 1.4 及以前也是安全的。                | 不安全。旧 JMM 下 volatile 的语义有缺陷 —— 它不阻止 volatile 写与普通写之间的重排序，所以 DCL 挡不住"引用先赋值、对象后初始化"。DCL 是在 **JDK 1.5（JSR-133 重新定义 JMM）**&#x4E4B;后才真正可靠；更稳妥的写法是静态内部类或枚举单例。                                    |

@@ -35,6 +35,13 @@ TOPICS = [
 ]
 
 
+# 未在知识地图中登记的主题目录，给一句说明，避免在总目录里显示占位符
+EXTRA_TOPIC_DESC = {
+    "devops": "构建、制品仓库与运维排障",
+    "project-experience": "项目经验：真实业务链路的接口、鉴权、缓存与状态机梳理",
+}
+
+
 def title_of(path):
     """取文件首个一级标题；取不到就用文件名。"""
     try:
@@ -117,7 +124,7 @@ def build():
     a("| --- | --- | --- | --- |")
     desc_map = {t: d for t, _, d in TOPICS}
     for topic, md, _assets in data:
-        a(f"| [`{topic}/`](#{topic}) | `{topic_to_km(topic)}` | {desc_map.get(topic, '—')} | {len(md)} 份 |")
+        a(f"| [`{topic}/`](#{topic}) | `{topic_to_km(topic)}` | {desc_map.get(topic, EXTRA_TOPIC_DESC.get(topic, '—'))} | {len(md)} 份 |")
     a("")
     a("## 讲义清单")
     for topic, md, assets in data:

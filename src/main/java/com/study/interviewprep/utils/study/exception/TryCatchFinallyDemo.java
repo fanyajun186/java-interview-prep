@@ -1,4 +1,4 @@
-package com.study.interviewprep.utils.study;
+package com.study.interviewprep.utils.study.exception;
 
 public class TryCatchFinallyDemo {
     public static int testReturn() {

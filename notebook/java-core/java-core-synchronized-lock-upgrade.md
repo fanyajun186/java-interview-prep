@@ -1,4 +1,5 @@
-> 2026-10-14 成稿，Java 底层与并发主题
+> 2026-10-14 成稿，Java 底层与并发主题  
+> 2026-11-12 融合桌面《synchronized.pdf》《synchronized 锁升级.pdf》两份图解讲义：补 JOL 实测、与 ReentrantReadWriteLock 的降级对比、工程降锁开销清单，并订正两份原文 10 处表述（见第九节）
 
 # synchronized 与锁升级：从字节码到 ObjectMonitor
 
@@ -110,6 +111,8 @@ public synchronized void syncMethod() { value++; }
 | `_WaitSetLock` | int | 保护 _WaitSet 的自旋锁 |
 
 > `_cxq` 和 `_EntryList` 是有分工的：`_cxq` 是**入口**，用 CAS 无锁push，吞吐高；`_EntryList` 是**候选**，唤醒时从这里挑。这个设计与 `synchronized` 的**非公平**特性直接相关 —— 新来的线程可以直接从 _cxq 插队抢到锁，不必排 _EntryList 的队。
+
+补一句常被说错的话：<span style="color:red">**ObjectMonitor 的加锁入口确实是 CAS**</span>，`enter` 先 CAS 把 `_owner` 从 NULL 改成自己；但**解锁不是 CAS**，`exit` 用原子写把 `_owner` 置 NULL、`_recursions` 减到 0，再 `unpark` 后继。而且 CAS 失败之后也不是继续 CAS，而是包装成 `ObjectWaiter` 塞进 `_cxq` 然后 park。所以"加减锁都靠 CAS"只对了前半句。
 
 #### ObjectMonitor 结构与线程流转图
 
@@ -301,6 +304,17 @@ JVM 会根据这把锁上的历史表现动态调整：
 
 > **面试口径（准确版）**："严格说锁升级是单向的，不存在重回轻量级锁或偏向锁的'降级'路径。但重量级锁在被彻底释放、且 JVM 在 safepoint 做 monitor deflation 时，可以把闲置的 ObjectMonitor 回收掉、把对象头还原成无锁态，这样后续再访问这个对象又要重新走一遍完整的锁获取流程。所以更严谨的说法是：锁状态在'已膨胀'这件事上不可逆，但'膨胀出来的 monitor'可以被回收，对象可以回到无锁起点。"
 
+经常有人拿 ReentrantReadWriteLock 的锁降级来对比，这是两件不同的事，别混在一起：
+
+| 维度 | synchronized 的"降级" | ReentrantReadWriteLock 的锁降级 |
+| --- | --- | --- |
+| 指什么 | 锁状态从重量级退回轻量级或偏向 | 持写锁时再申请读锁，然后释放写锁 |
+| 是否存在 | 不存在，只能释放回无锁 | 支持，而且是官方推荐的用法 |
+| 为什么 | 单一互斥语义，锁没有强弱之分；回退还得重建对象头，竞争回来又得再膨胀 | 保证释放写锁后数据不被别的写线程改掉，读到的仍是自己刚写的值 |
+| 写法 | 无 | 先 `writeLock.lock()`，再 `readLock.lock()`，再 `writeLock.unlock()` |
+
+所以"读写锁支持降级"说的是**锁的强弱转换**，"synchronized 不支持降级"说的是**锁状态不可回退**，两者只是共用了"降级"这个词。
+
 ### 3.8 偏向锁的现状（JDK 15 JEP 374，必答演进）
 
 | JDK 版本 | 偏向锁状态 |
@@ -346,14 +360,63 @@ HotSpot 为每个**类**维护一个偏向锁撤销计数器（`Klass` 里的 `_
 | 批量重偏向 bulk rebias | **20** | 类 epoch+1，允许新线程 CAS 重偏向 | 否 |
 | 批量撤销 bulk revoke | **40** | 该类所有实例撤销偏向，类被标记为不可偏向，后续 new 出的对象直接无锁 | 是（撤销动作本身） |
 
+### 4.3 用 JOL 实测三种锁状态（可复现）
+
+面试里说"我拿 JOL 看过对象头"比背结论更有说服力，但这段 demo 有四个坑，踩了就跑不出预期结果：
+
 ```java
-// 经典验证demo：同一类型的锁对象先由 t1 加偏向锁，再由 t2 大量获取并 count
-// 打印 class layout（依赖 JOL: org.openjdk.jol:jol-core）
-// System.out.println(ClassLayout.parseInstance(lockObj).toPrintable());
-// 可以观察到对象头从 biased(101) 变为 thin lock(00) 再到 fat lock(10) 的变化
+// 依赖 org.openjdk.jol:jol-core
+public class LockUpgradeDemo {
+    static void print(String tag, Object o) {
+        System.out.println("== " + tag + " ==");
+        System.out.println(ClassLayout.parseInstance(o).toPrintable());
+    }
+
+    public static void main(String[] args) throws Exception {
+        Thread.sleep(5000);                       // 坑 1：等过偏向锁 4s 启动延迟
+        Object obj = new Object();
+        print("新建", obj);                        // 101 可偏向，线程 ID 为 0（JDK 15+ 是 001）
+
+        synchronized (obj) { print("首次加锁", obj); }   // 101 写入线程 ID
+
+        Thread t2 = new Thread(() -> {
+            synchronized (obj) { print("第二个线程", obj); }  // 00 轻量级
+        });
+        t2.start();
+        t2.join();                                 // 坑 2：必须 join，否则看不到结果
+
+        Thread t3 = new Thread(() -> {
+            synchronized (obj) { print("并发竞争", obj); }    // 10 重量级
+        });
+        synchronized (obj) {                       // 坑 3：主线程持锁不放，制造真并发
+            t3.start();
+            Thread.sleep(100);
+        }
+        t3.join();
+    }
+}
 ```
 
-> 加分项：可以用 JOL（Java Object Layout）在面试前自己动手验证 Mark Word 变化，把这个实践说出来非常有说服力。
+JOL 0.16 之后会直接把状态标在值后面，比数二进制快得多：
+
+| 输出片段 | 末 3 位 | 状态 |
+| --- | --- | --- |
+| `0x0000000000000005 (biasable; age: 0)` | 101 | 可偏向，还没绑定线程 |
+| `0x0000000000029005 (biased: 0x...0a; age: 0)` | 101 | 已偏向 Thread-0 |
+| `0x00000000027ef8f0 (thin lock: 0x...f0)` | 000 | 轻量级锁，指向栈上 Lock Record |
+| `0x00000000026d4a0a (fat lock: 0x...0a)` | 010 | 重量级锁，指向 ObjectMonitor |
+| `0x0000000000000001 (non-biasable; age: 0)` | 001 | 不可偏向的无锁态 |
+
+第四行和第二行的区别值得停一下：都是 101，前者线程 ID 非 0，后者是 0。**新建对象在偏向生效后就是 101**（匿名偏向），不需要任何线程去抢，所以第一次 `synchronized` 只是把线程 ID 写进去，没有 CAS 竞争。
+
+四个坑，按踩到的概率排：
+
+1. **偏向锁有 4 秒启动延迟**。JVM 刚起来时 `-XX:BiasedLockingStartupDelay` 默认 4000ms，这期间 new 出来的对象是不可偏向的（001），加锁只能走轻量级。要么 `sleep(5000)`，要么加 `-XX:BiasedLockingStartupDelay=0`
+2. **001 的对象永远变不成 101**。可偏向性是对象创建时就定下的，后面再加锁也改不了。网上不少 demo 先打印出 `...0001` 再声称"首次加锁变偏向锁"，这两句自相矛盾，看到就可以判定那份输出是拼的
+3. **不制造并发就看不到膨胀**。两个线程一前一后各自加锁，最多到轻量级（00）；要看到 10，必须让一个线程持锁、另一个在门外等
+4. **JDK 15 及以上没有偏向锁**。默认关闭，第一步直接是 00，跑不出 101 不是代码写错了。JDK 18 起 `-XX:+UseBiasedLocking` 已被 obsolete，加了也不生效
+
+> 加分项：把这段跑通并截图，面试时能直接说"101 是匿名偏向，001 是不可偏向，同一份代码在 JDK 8 和 JDK 17 上第一步就不一样"，比只背流程图扎实得多。
 
 ---
 
@@ -465,7 +528,20 @@ synchronized (lock) {
 }
 ```
 
-（注：`-XX:+EliminateLocks` 之外还有 `-XX:-UseLockCMovXX` 等细粒度参数不必记；锁粗化由 C2 自动完成。）
+（注：锁粗化由 C2 自动完成，没有单独的开关参数，别去搜什么 `-XX:+UseLockCoarsening`。）
+
+### 5.6 降低锁开销的清单
+
+按"先测量、再动手"的顺序排，前三条是收益最大也最安全的：
+
+1. **缩小同步块范围**。只包住共享变量的读改写，不要把日志、序列化、RPC 调用包进去。持有锁做 IO 是线上最典型的性能事故，一次 200ms 的远程调用就能把整条线程队列堵死
+2. **用现成的并发容器替代手写同步**。计数用 `LongAdder` 或 `AtomicInteger`，映射用 `ConcurrentHashMap`，缓存用 `Caffeine`。这些类的分段、CAS、无锁读比一把大锁精细得多
+3. **控制并发度**。锁竞争激烈往往是线程数开太多，把线程池调小有时比换锁更有效；数据分片（按 key 取模分段加锁）也是同一思路
+4. **需要超时或中断时换 `ReentrantLock`**。高竞争下 `tryLock(timeout)` 能主动退让，避免线程无限期堆在锁上；`synchronized` 没有这个能力
+5. **不要为了"优化"去关偏向锁**。JDK 15 起它本来就默认关了，参数也已被 obsolete；老 JDK 上只有确认"该锁被多线程轮流拿、撤销频繁"时，关掉才有意义，而且必须用 `-XX:+PrintBiasedLockingStatistics` 之类的数据说话
+6. **别锁不该锁的对象**。字符串常量（可能来自常量池，全 JVM 共享）、包装类缓存（`Integer.valueOf` 复用 -128~127 的对象）、`this`（会波及同类所有同步方法）都是常见误用，应当用 `private final Object lock` 兜住
+
+> 判断顺序建议：先进 `jstack` 看线程是不是真的停在 `BLOCKED (on object monitor)`，再用 JFR 的 `Java Monitor Blocked` 事件看阻塞时长，确认是锁竞争再改代码。凭感觉加锁、凭感觉去锁，通常只是把问题挪了个位置。
 
 ---
 
@@ -542,3 +618,26 @@ synchronized (lock) {
 | 误区 6：自旋一定会自旋固定的 10 次（`-XX:PreBlockSpin`）。 | JDK 6 之后是**自适应自旋**：JVM 根据该锁历史上的自旋成功率与 owner 运行状态（运行中则加长、被阻塞则缩短）动态决策，从没成功过就直接跳过自旋以省 CPU。`-XX:PreBlockSpin` 在 JDK 7 之后已失效。偏向锁被废弃不等于自旋失效，自旋仍是有效优化。 |
 | 误区 7：调用 `notify()` 会立刻唤醒线程并让它马上继续执行。 | `notify` 只是把线程从 `_WaitSet` 移到 `_cxq`/`_EntryList`，它还得**重新竞争到 monitor 锁**才能从 `wait()` 返回，被唤醒 ≠ 立即运行。这也是等待方必须用 `while` 而非 `if` 重新校验条件的原因 —— 唤醒到真正拿到锁之间，条件可能已被其他线程改坏。 |
 | 误区 8：`wait()` 会释放所有锁，`sleep()` 也会释放锁。 | 正好要分清：`wait()` 只释放**当前那个对象的 monitor**，线程持有的其他锁一律不释放；而 `sleep()` **一把锁都不释放**，只是让出 CPU 时间片。另外 `wait()` 是 `Object` 的实例方法且必须在 synchronized 内调用，否则抛 `IllegalMonitorStateException`。 |
+| 误区 9：synchronized 是悲观锁，一进去没拿到锁线程就挂起。 | 悲观锁的定性没问题，但"挂起"只对重量级锁成立。偏向锁阶段根本没有竞争，只比对线程 ID；轻量级锁阶段是在用户态自旋，线程保持 `RUNNABLE`；只有膨胀成重量级锁、进 `_cxq` 排队之后才 park 挂起。笼统说"没拿到就挂起"会把三级优化全抹掉。 |
+| 误区 10：轻量级锁 CAS 失败就立刻膨胀成重量级锁。 | CAS 失败只是"有人跟我抢"的信号，接下来是自适应自旋。只有自旋超过阈值仍拿不到、或者出现第三个线程同时竞争，才 inflate。把这两步合并，就答不出"自旋为什么能省掉上下文切换"这个关键点。 |
+
+---
+
+## 九、两份原文的 10 处勘误
+
+两份 PDF（`synchronized.pdf`、`synchronized 锁升级.pdf`）是同一主题的图解简版，结论大体对，但有 10 处需要改，其中第 5、6 条会让照着做的人跑不出结果：
+
+| # | 原文说法 | 问题 | 正确说法 |
+| --- | --- | --- | --- |
+| 1 | synchronized 只支持锁升级，不支持锁降级 | 少了一个出口 | 不会退回轻量级或偏向，但释放后对象能回到无锁态（monitor deflation 会回收闲置 monitor）。读写锁的"降级"是另一个概念，见 3.7 |
+| 2 | JVM 默认开启偏向锁（`-XX:+UseBiasedLocking`） | 版本已变 | JDK 6 到 14 默认开；JDK 15 起 JEP 374 默认关闭；JDK 18 起该参数 obsolete，加了不生效 |
+| 3 | 轻量级锁 CAS 失败说明存在竞争，升级为重量级锁 | 跳过了自旋 | CAS 失败先进自适应自旋，自旋失败或有第三个线程竞争才 inflate。原文下一句自己又说"通过自旋尝试获取"，前后矛盾 |
+| 4 | 重量级锁通过 monitorenter 和 monitorexit 指令实现 | 层次混淆 | 所有 synchronized 都编译成这两个指令，它们不是重量级锁的实现。重量级的实现是 `ObjectMonitor::enter` / `exit` |
+| 5 | JOL 输出 `01 00 00 00` 标为无锁，紧接下一步标为偏向锁 | 两次输出自相矛盾 | 001 是不可偏向态，再加锁只能得到 00 轻量级。要看到 101，对象必须在偏向锁生效后创建，且创建时就是 101 |
+| 6 | demo 里 new 完立刻加锁，没有等 4 秒 | 跑不出偏向锁 | 偏向锁有 `BiasedLockingStartupDelay` 默认 4000ms 延迟，需 sleep 或设该参数为 0 |
+| 7 | demo 只 `start()` 不 `join()`，两个线程也没有重叠 | 看不到锁升级 | 主线程可能在子线程执行前就结束；两个线程先后执行最多到轻量级，要制造持锁与等待的真并发才会膨胀 |
+| 8 | 建议用 `-XX:-UseBiasedLocking` 关闭偏向锁来优化 | 建议过时 | JDK 15+ 本来就关着，参数已 obsolete；老 JDK 上只有撤销确实频繁时才有收益，要靠统计数据判断 |
+| 9 | synchronized 是悲观锁，没拿到锁就会线程挂起 | 只对重量级成立 | 偏向锁零竞争直接放行，轻量级锁自旋不挂起，进 `_cxq` 排队后才 park |
+| 10 | ObjectMonitor 加减锁都是利用 CAS | 解锁不是 CAS | 加锁入口用 CAS 抢 `_owner`，失败后进 `_cxq` 并 park；解锁是原子写释放 `_owner`、`_recursions` 归零后 `unpark` 后继 |
+
+原文还漏了三个面试常问的点，本文已在正文补齐：锁降级与 ReentrantReadWriteLock 的区别（3.7）、JOL 实测的四个坑（4.3）、降低锁开销的实操清单（5.6）。
